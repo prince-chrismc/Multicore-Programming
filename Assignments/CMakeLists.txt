@@ -1,0 +1,1 @@
+project(Multicore-Assignments)
