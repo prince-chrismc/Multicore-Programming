@@ -1,0 +1,3 @@
+[submodule "Assignments/CGL"]
+	path = Assignments/CGL
+	url = https://github.com/prince-chrismc/Computer-Graphics-Libraries.git
