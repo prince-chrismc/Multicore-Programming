@@ -70,6 +70,7 @@ before_install:
 if: branch = master
 
 script:
+- cd Assignments
 - mkdir build-travis
 - cd build-travis
 - cmake .. -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DSIMPLE_SOCKET_DEP_ONLY=ON -DCLI_PARSER_DEP_ONLY=ON
