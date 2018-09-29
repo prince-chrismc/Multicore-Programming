@@ -1,0 +1,78 @@
+sudo: false
+language: cpp
+matrix:
+  include:
+    # works on Precise and Trusty
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+            - libxrandr-dev
+            - libxinerama-dev
+            - libxcursor-dev
+            - libxi-dev
+      env:
+        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+  
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+            - libxrandr-dev
+            - libxinerama-dev
+            - libxcursor-dev
+            - libxi-dev
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-6.0
+          - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-6.0 main'
+            key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          packages:
+          - clang-6.0
+          - libstdc++6
+            - libxrandr-dev
+            - libxinerama-dev
+            - libxcursor-dev
+            - libxi-dev
+      env:
+      - MATRIX_EVAL="CC=clang-6.0 && CXX=clang++-6.0"
+
+    - os: osx
+      osx_image: xcode9.4
+      env:
+        - MATRIX_EVAL=""
+
+    - os: osx
+      osx_image: xcode10
+      env:
+        - MATRIX_EVAL=""
+
+before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update ;
+      brew cask uninstall oclint;
+      fi
+    - eval "${MATRIX_EVAL}"
+
+# require the branch name to be master
+if: branch = master
+
+script:
+- mkdir build-travis
+- cd build-travis
+- cmake .. -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DSIMPLE_SOCKET_DEP_ONLY=ON -DCLI_PARSER_DEP_ONLY=ON
+- make -j3
+- cmake .. -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_BUILD_TYPE=Debug -DSIMPLE_SOCKET_DEP_ONLY=ON -DCLI_PARSER_DEP_ONLY=ON
+- make -j3
