@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(Multicore-Assignments)
 
+# set up versioning.
+set(BUILD_MAJOR "0")
+set(BUILD_MINOR "0")
+set(BUILD_VERSION "0")
+set(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_VERSION})
+
 # You can tweak some common (for all subprojects) stuff here. For example:
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
@@ -52,12 +58,16 @@ endif()
 # NOTE: The order matters! The most independent ones should go first.
 add_subdirectory(CGL)
 
-include_directories("CGL/src/")
+FILE(GLOB GC_HEADERS "Galaxy-Collider/src/*")
 
 if(UNIX)
-    ADD_EXECUTABLE(Galaxy-Collider.run Galaxy-Collider/Galaxy-Collider.cpp)
+    ADD_EXECUTABLE(Galaxy-Collider.run Galaxy-Collider/Galaxy-Collider.cpp ${GC_HEADERS})
     TARGET_LINK_LIBRARIES(Galaxy-Collider.run cg-lib)
+	target_include_directories(Galaxy-Collider PRIVATE Galaxy-Collider/src)
 elseif(WIN32)
-    ADD_EXECUTABLE(Galaxy-Collider Galaxy-Collider/Galaxy-Collider.cpp)
+    ADD_EXECUTABLE(Galaxy-Collider Galaxy-Collider/Galaxy-Collider.cpp ${GC_HEADERS})
     TARGET_LINK_LIBRARIES(Galaxy-Collider cg-lib)
+	target_include_directories(Galaxy-Collider PRIVATE Galaxy-Collider/src)
 endif()
+
+set_target_properties(cg-lib PROPERTIES VERSION ${BUILD_VERSION} SOVERSION ${BUILD_MAJOR})
