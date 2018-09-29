@@ -38,12 +38,16 @@ int main()
    std::cout << "Welcome to the Galaxy Collider Simulator!" << std::endl;
 
    // Create a GLFWwindow
-   auto window = GlfwWindow::CreateInstance( "Galaxy Collider Simulator by Christopher McArthur" );
-   if( ! window->IsValid() ) // Make sure it exists
+   try
    {
+      auto window = GlfwWindow::CreateInstance( "Galaxy Collider Simulator by Christopher McArthur" );
+   }
+   catch( const std::exception& e )
+   {
+      std::cout << "Window Creation Failed: " << e.what() << std::endl;
+      getchar();
       return -1;
    }
-
 
    // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
    glewExperimental = GL_TRUE;
@@ -55,26 +59,22 @@ int main()
    }
 
    // Build and compile our shader program
-   Shader::Vertex vertexShader( "shaders/vertex.shader" );
-   Shader::Fragment fragmentShader( "shaders/fragment.shader" );
-   if( !vertexShader() || !fragmentShader() ) // make sure they are ready to use
+   try
    {
+      Shader::Vertex vertexShader( "shaders/vertex.shader" );
+      Shader::Fragment fragmentShader( "shaders/fragment.shader" );
+      ShaderLinker::GetInstance()->Init( &vertexShader, &fragmentShader );
+   }
+   catch( const std::exception& e )
+   {
+      std::cout << "Shader Setup Failed: " << e.what() << std::endl;
+      getchar();
       return -1;
    }
-
-   auto shaderProgram = ShaderLinker::GetInstance();
-   if( !shaderProgram->Init( &vertexShader, &fragmentShader ) )
-   {
-      return -1;
-   }
-
-   // Constant vectors
-   const glm::vec3 center( 0.0f, 0.0f, 0.0f );
-   const glm::vec3 up( 0.0f, 1.0f, 0.0f );
-   const glm::vec3 eye( 0.0f, 35.0f, 35.0f );
 
    // Setup global camera
    auto camera = Camera::GetInstance();
 
 
+   return 0;
 }
