@@ -33,8 +33,9 @@ SOFTWARE.
 
 typedef Shader::Linked ShaderLinker;
 
-int main()
+int main( int argc, char** argv )
 {
+   std::cout << argv[ 0 ] << std::endl;
    std::cout << "Welcome to the Galaxy Collider Simulator!" << std::endl;
 
    // Create a GLFWwindow
@@ -61,8 +62,8 @@ int main()
    // Build and compile our shader program
    try
    {
-      Shader::Vertex vertexShader( "shaders/vertex.shader" );
-      Shader::Fragment fragmentShader( "shaders/fragment.shader" );
+      Shader::Vertex vertexShader( "../Galaxy-Collider/shaders/vertex.shader" );
+      Shader::Fragment fragmentShader( "../Galaxy-Collider/shaders/fragment.shader" );
       ShaderLinker::GetInstance()->Init( &vertexShader, &fragmentShader );
    }
    catch( const std::exception& e )
@@ -74,6 +75,29 @@ int main()
 
    // Setup global camera
    auto camera = Camera::GetInstance();
+   auto window = GlfwWindow::GetInstance();
+   auto shaderProgram = ShaderLinker::GetInstance();
+
+   while( ! window->ShouldClose() )
+   {
+      window->TriggerCallbacks();
+
+      // Clear the colorbuffer
+      glClearColor( 0.05f, 0.075f, 0.075f, 1.0f ); // near black teal
+      glClear( GL_COLOR_BUFFER_BIT );
+
+      shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
+
+      shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
+
+      glm::mat4 model_matrix{};
+      shaderProgram->SetUniformMat4( "model_matrix", model_matrix );
+
+
+      // Draw Loop
+
+      window->NextBuffer();
+   }
 
 
    return 0;
