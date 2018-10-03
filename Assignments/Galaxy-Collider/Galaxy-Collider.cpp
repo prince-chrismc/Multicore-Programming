@@ -33,6 +33,8 @@ SOFTWARE.
 
 typedef Shader::Linked ShaderLinker;
 
+void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
+
 int main( int argc, char** argv )
 {
    std::cout << argv[ 0 ] << std::endl;
@@ -42,6 +44,7 @@ int main( int argc, char** argv )
    try
    {
       auto window = GlfwWindow::CreateInstance( "Galaxy Collider Simulator by Christopher McArthur" );
+      window->SetKeyCallback( key_callback );
    }
    catch( const std::exception& e )
    {
@@ -101,4 +104,29 @@ int main( int argc, char** argv )
 
 
    return 0;
+}
+
+
+// ------------------------------------------------------------------------------------------------ //
+//                                      CALLBACK FUNCTIONS                                        - //
+// ------------------------------------------------------------------------------------------------ //
+
+// Is called whenever a key is pressed/released via GLFW
+void key_callback( GLFWwindow* window, int key, int, int action, int )
+{
+   // we are only concerned about key presses not releases
+   if( action != GLFW_PRESS )
+      return;
+
+   switch( key )
+   {
+   case GLFW_KEY_ESCAPE:
+      // Window close
+      glfwSetWindowShouldClose( window, GLFW_TRUE );
+      break;
+
+   default:
+      // Do Nothing
+      break;
+   };
 }
