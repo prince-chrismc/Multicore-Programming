@@ -58,14 +58,14 @@ endif()
 # NOTE: The order matters! The most independent ones should go first.
 add_subdirectory(CGL)
 
-FILE(GLOB GC_HEADERS "Galaxy-Collider/src/*")
+FILE(GLOB GC_SOURCE_CODE "Galaxy-Collider/src/*")
 
 if(UNIX)
-    ADD_EXECUTABLE(Galaxy-Collider.run Galaxy-Collider/Galaxy-Collider.cpp ${GC_HEADERS})
+    ADD_EXECUTABLE(Galaxy-Collider.run Galaxy-Collider/Galaxy-Collider.cpp ${GC_SOURCE_CODE})
     TARGET_LINK_LIBRARIES(Galaxy-Collider.run cg-lib)
 	target_include_directories(Galaxy-Collider.run PRIVATE Galaxy-Collider/src)
 elseif(WIN32)
-    ADD_EXECUTABLE(Galaxy-Collider Galaxy-Collider/Galaxy-Collider.cpp ${GC_HEADERS})
+    ADD_EXECUTABLE(Galaxy-Collider Galaxy-Collider/Galaxy-Collider.cpp ${GC_SOURCE_CODE})
     TARGET_LINK_LIBRARIES(Galaxy-Collider cg-lib)
 	target_include_directories(Galaxy-Collider PRIVATE Galaxy-Collider/src)
 endif()

@@ -29,8 +29,8 @@ std::once_flag Camera::s_Flag;
 std::shared_ptr<Camera> Camera::s_Instance;
 
 const glm::vec3 Camera::CENETER(0.0f, 0.0f, 0.0f);
-const glm::vec3 Camera::UP(0.0f, 0.0f, 1.0f);
-const glm::vec3 Camera::EYE(0.0f, -5.0f, 3.0f);
+const glm::vec3 Camera::UP(0.0f, 1.0f, 0.0f);
+const glm::vec3 Camera::EYE(0.0f, 0.0f, 5.0f);
 
 glm::mat4 Camera::GetViewMatrix() const
 {

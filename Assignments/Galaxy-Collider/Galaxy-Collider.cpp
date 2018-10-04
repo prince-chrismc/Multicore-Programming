@@ -24,12 +24,16 @@ SOFTWARE.
 
 */
 
-#include <iostream>
 #include <GL/glew.h>
 #include "Singleton.h"
 #include "Linked.h"
 #include "Shaders.h"
 #include "Camera.h"
+#include <iostream>
+
+#include <limits>
+#include "ObjectColors.h"
+#include "Particle.h"
 
 typedef Shader::Linked ShaderLinker;
 
@@ -81,7 +85,11 @@ int main( int argc, char** argv )
    auto window = GlfwWindow::GetInstance();
    auto shaderProgram = ShaderLinker::GetInstance();
 
-   while( ! window->ShouldClose() )
+
+   Particle particle( 0.0, 0.0, 1.0 );
+
+
+   while( !window->ShouldClose() )
    {
       window->TriggerCallbacks();
 
@@ -90,14 +98,11 @@ int main( int argc, char** argv )
       glClear( GL_COLOR_BUFFER_BIT );
 
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
-
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
-      glm::mat4 model_matrix{};
-      shaderProgram->SetUniformMat4( "model_matrix", model_matrix );
-
-
       // Draw Loop
+      shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::RED );
+      particle.Draw();
 
       window->NextBuffer();
    }
@@ -106,12 +111,60 @@ int main( int argc, char** argv )
    return 0;
 }
 
+//
+// Interfaces
+//
+class Drawable abstract
+{
+public:
+   virtual ~Drawable() = default;
+   virtual void Draw() const = 0;
+};
 
-// ------------------------------------------------------------------------------------------------ //
-//                                      CALLBACK FUNCTIONS                                        - //
-// ------------------------------------------------------------------------------------------------ //
+//
+// Models
+//
+class Blackhole : public Particle
+{
+public:
+   Blackhole( long double x, long double  y ) : Particle( x, y, LDBL_MAX ) {}
 
-// Is called whenever a key is pressed/released via GLFW
+   void Draw() const override { /* TBA */ }
+};
+
+class Quadrant : public Drawable
+{
+public:
+   enum District { NE, SE, SW, NW };
+
+   Quadrant( District disc, long double x, long double y ) : m_District( disc ), m_Pos( x, y ) {}
+
+   void Draw() const override { /* TBA */ }
+
+   District m_District;
+   glm::vec<2, long double> m_Pos;
+};
+
+class Galaxy : public Drawable
+{
+public:
+   Galaxy( ObjectColors col, long double x, long double y ) : m_Blackhole( x, y ), m_Color( col ), m_Pos( x, y )
+   {
+   }
+
+   void Draw() const override { /* TBA */ }
+
+private:
+   Blackhole m_Blackhole;
+
+   ObjectColors m_Color;
+   glm::vec<2, long double> m_Pos;
+};
+
+
+//
+// CALLBACK FUNCTIONS
+//
 void key_callback( GLFWwindow* window, int key, int, int action, int )
 {
    // we are only concerned about key presses not releases
