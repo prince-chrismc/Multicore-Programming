@@ -31,101 +31,11 @@ SOFTWARE.
 #include "Camera.h"
 #include <iostream>
 
-#include <limits>
-#include "ObjectColors.h"
-#include "Particle.h"
-#include <map>
-#include <random>
+#include "Galaxy.h"
 
 typedef Shader::Linked ShaderLinker;
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Blackhole : public Particle
-{
-public:
-   Blackhole( float x, float  y ) : Particle( x, y, LDBL_MAX ) {}
-
-   void Draw() const override { ShaderLinker::GetInstance()->SetUniformInt( "object_color", (GLint)ObjectColors::YELLOW ); Particle::Draw(); }
-};
-
-
-#include <tuple>
-struct GlmVec2Comparator
-{
-   bool operator()( const glm::vec2& l, const glm::vec2& r ) const {
-      return std::tie( l.x, l.y ) < std::tie( r.x, r.y );
-   }
-};
-
-class Galaxy /*: public Drawable*/
-{
-public:
-   Galaxy( ObjectColors col, float x, float y, float radius, size_t particles ) : m_Blackhole( x, y ), m_Color( col )
-   {
-      static constexpr const long double PI = 3.141592653589793238462643383279502884L;
-
-      static std::random_device rd;
-      static std::mt19937 gen( rd() );
-      static std::lognormal_distribution<float> numGen( -0.5f, 1.25f );
-
-      for( size_t i = 0; i < particles; i++ )
-      {
-         float a = numGen( gen ) * 2.0f * PI;
-         float r = radius * sqrt( numGen( gen ) );
-
-         // If you need it in Cartesian coordinates
-         float rel_x = r * cos( a );
-         float rel_y = r * sin( a );
-
-         m_Stars.insert( std::make_pair( glm::vec2{ rel_x + x, rel_y + y }, Particle( rel_x + x, rel_y + y, gen() ) ) );
-      }
-   }
-
-   void Draw() const
-   {
-      m_Blackhole.Draw();
-      ShaderLinker::GetInstance()->SetUniformInt( "object_color", (GLint)m_Color );
-      for( auto& Particle : m_Stars ) Particle.second.Draw();
-   }
-
-private:
-   Blackhole m_Blackhole;
-   ObjectColors m_Color;
-   std::map<glm::vec2, Particle, GlmVec2Comparator> m_Stars;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 int main( int argc, char** argv )
 {
@@ -176,7 +86,7 @@ int main( int argc, char** argv )
 
    Particle particle( 0.0, 0.0, 1.0 );
 
-   Galaxy galaxy( ObjectColors::TEAL, -5.0f, 5.0f, 2.5f, 10000 );
+   Galaxy galaxy( ObjectColors::TEAL, -5.0f, 5.0f, 7.5f, 10000 );
 
 
    while( !window->ShouldClose() )
@@ -203,29 +113,18 @@ int main( int argc, char** argv )
 }
 
 //
-// Interfaces
-//
-class Drawable abstract
-{
-public:
-   virtual ~Drawable() = default;
-   virtual void Draw() const = 0;
-};
-
-//
 // Models
 //
-class Quadrant : public Drawable
+class Quadrant
 {
 public:
    enum District { NE, SE, SW, NW };
 
-   Quadrant( District disc, long double x, long double y ) : m_District( disc ), m_Pos( x, y ) {}
+   Quadrant( District disc, long double x, long double y ) : m_District( disc ) {}
 
-   void Draw() const override { /* TBA */ }
+   void Draw() const { /* TBA */ }
 
    District m_District;
-   glm::vec<2, long double> m_Pos;
 };
 
 
