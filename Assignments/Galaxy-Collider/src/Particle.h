@@ -30,7 +30,7 @@ SOFTWARE.
 class Particle
 {
 public:
-   Particle( long double x, long double  y, long double m ) : m_Pos( x, y ), m_Mass( m ) {}
+   Particle( float x, float  y, long double m ) : m_Pos( x, y ), m_Mass( m ) {}
 
    virtual void Draw() const;
 
@@ -41,7 +41,7 @@ private:
    class Model;
 };
 
-class Particle::Model
+class Particle::Model final
 {
 public:
    ~Model();
