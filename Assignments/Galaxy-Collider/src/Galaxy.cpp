@@ -27,7 +27,7 @@ SOFTWARE.
 #include <tuple>
 #include <random>
 
-Blackhole::Blackhole( float x, float y ) : Particle( x, y, LDBL_MAX )
+Blackhole::Blackhole( float x, float y ) : Particle( x, y, 1.76f )
 {
 }
 
@@ -60,7 +60,7 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
       float rel_x = r * cos( a );
       float rel_y = r * sin( a );
 
-      m_Stars.insert( std::make_pair( glm::vec2{ rel_x + x, rel_y + y }, Particle( rel_x + x, rel_y + y, numGenMass( gen ) ) ) );
+      m_Stars.insert( std::make_pair( glm::vec2{ rel_x + x, rel_y + y }, Particle( rel_x + x, rel_y + y, 0.76f + static_cast<float>( numGenMass( gen ) / LDBL_MAX ) ) ) );
    }
 }
 

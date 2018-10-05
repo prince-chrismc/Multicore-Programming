@@ -32,12 +32,12 @@ SOFTWARE.
 class Particle
 {
 public:
-   Particle( float x, float  y, long double m ) : m_Pos( x, y ), m_Mass( m ) {}
+   Particle( float x, float  y, float m ) : m_Pos( x, y ), m_Mass( m ) {}
 
    virtual void Draw() const;
 
    glm::vec2 m_Pos;
-   long double m_Mass;
+   float m_Mass;
 
 private:
    class Model;

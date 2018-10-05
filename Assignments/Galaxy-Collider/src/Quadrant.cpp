@@ -83,6 +83,8 @@ void Quadrant::updateMassDistribution()
 {
    for( auto& quad : std::get<2>( m_Contains ) )
    {
+      if( quad->m_TotalParticles == 0 ) continue;
+
       m_Mass += quad->m_Mass;
       m_CenterOfMass += quad->m_Mass * quad->m_CenterOfMass;
    }
