@@ -38,22 +38,36 @@ public:
 
    void Draw() const;
 
-   District getDistrict(const glm::vec2& pos) const;
-
    void insert(const Particle& particle);
-   bool outsideOfRegion(const Particle& particle) const;
 
 private:
+
    std::variant<int, Particle, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
 
    unsigned long long m_TotalParticles;
 
-   District m_District;
-   float m_MinX;
-   float m_MinY;
-   float m_MaxX;
-   float m_MaxY;
-   glm::vec2 m_Center{};
+   glm::vec2 m_CenterOfMass;
+   float m_Mass;
+
+   void updateMassDistribution();
+
+   class Spacial
+   {
+   public:
+      Spacial( District disc, float x_min, float y_min, float x_max, float y_max );
+
+      bool outsideOfRegion( const Particle& particle ) const;
+      std::array<std::unique_ptr<Quadrant>, 4> makeChildDistricts() const;
+      District determineChildDistrict( const glm::vec2& pos ) const;
+
+   private:
+      District m_District;
+      float m_MinX;
+      float m_MinY;
+      float m_MaxX;
+      float m_MaxY;
+      glm::vec2 m_Center;
+   } m_Space;
 
    class Model
    {
