@@ -27,6 +27,7 @@ SOFTWARE.
 #include "ObjectColors.h"
 
 Quadrant::Quadrant( District disc, float x_min, float y_min, float x_max, float y_max ) :
+   m_TotalParticles(0),
    m_District( disc ),
    m_MinX( x_min ),
    m_MinY( y_min ),
@@ -95,16 +96,18 @@ void Quadrant::insert( const Particle& particle )
    {
       m_Contains.emplace<Particle>( particle );
    }
+
+   m_TotalParticles++;
 }
 
-bool Quadrant::outsideOfRegion(const Particle& particle)
+bool Quadrant::outsideOfRegion(const Particle& particle) const
 {
    // https://stackoverflow.com/a/42396910/8480874
    auto calcVector = []( glm::vec2 p1, glm::vec2 p2 )->glm::vec2 {
       return{ p2.x - p1.x , -1 * ( p2.y - p1.y ) };
    };
 
-   auto isPointWithinFourCornersOfRectangle = [ calcVector ]( glm::vec2 A, glm::vec2 B, glm::vec2 C, glm::vec2 D, glm::vec2 m )->bool {
+   const auto isPointWithinFourCornersOfRectangle = [ calcVector ]( glm::vec2 A, glm::vec2 B, glm::vec2 C, glm::vec2 D, glm::vec2 m )->bool {
       glm::vec2 AB = calcVector( A, B );  float C1 = -1 * ( AB.y*A.x + AB.x*A.y ); float D1 = ( AB.y*m.x + AB.x*m.y ) + C1;
       glm::vec2 AD = calcVector( A, D );  float C2 = -1 * ( AD.y*A.x + AD.x*A.y ); float D2 = ( AD.y*m.x + AD.x*m.y ) + C2;
       glm::vec2 BC = calcVector( B, C );  float C3 = -1 * ( BC.y*B.x + BC.x*B.y ); float D3 = ( BC.y*m.x + BC.x*m.y ) + C3;
@@ -125,10 +128,10 @@ Quadrant::Model::Model( float x_min, float y_min, float x_max, float y_max )
 
    std::vector<glm::vec3> vertices(
       {
-         {x_min, y_min, 0.0f}, {x_min, y_max, 0.0f},
-         {x_min, y_max, 0.0f}, {x_max, y_max, 0.0f},
-         {x_max, y_max, 0.0f}, {x_max, y_min, 0.0f},
-         {x_max, y_min, 0.0f}, {x_min, y_min, 0.0f}
+         { x_min, y_min, 0.0f }, { x_min, y_max, 0.0f },
+         { x_min, y_max, 0.0f }, { x_max, y_max, 0.0f },
+         { x_max, y_max, 0.0f }, { x_max, y_min, 0.0f },
+         { x_max, y_min, 0.0f }, { x_min, y_min, 0.0f }
       }
    );
 

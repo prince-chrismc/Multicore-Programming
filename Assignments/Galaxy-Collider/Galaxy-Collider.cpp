@@ -93,7 +93,7 @@ int main( int argc, char** argv )
    auto shaderProgram = ShaderLinker::GetInstance();
 
    Galaxy galaxy_one( ObjectColors::BLUE, -5.0f, 5.0f, 7.5f, 10000 );
-   Galaxy galaxy_two( ObjectColors::RED, 9.0f, -4.0f, 2.5f, 10000 );
+   Galaxy galaxy_two( ObjectColors::RED, 9.0f, -4.0f, 2.5f, 2500 );
    Quadrant root( Quadrant::NE, -20.0f, -20.0f, 20.0f, 20.0f );
 
    root << galaxy_one;
