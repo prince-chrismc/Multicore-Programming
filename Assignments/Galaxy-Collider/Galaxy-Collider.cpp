@@ -125,6 +125,7 @@ int main( int argc, char** argv )
    Particle particle_one( 1.0f, 1.0f, 1.0 );
    Particle particle_two( 2.0f, -3.0f, 1.0 );
    Particle particle_three( 1.9999f, -3.00001f, 1.0 );
+   Particle particle_out( 6.0f, 1.0f, 2.0 );
 
    Galaxy galaxy( ObjectColors::TEAL, -5.0f, 5.0f, 7.5f, 10000 );
 
@@ -133,6 +134,8 @@ int main( int argc, char** argv )
    root.insert( particle_one );
    root.insert( particle_two );
    root.insert( particle_three );
+
+   root.insert( particle_out );
 
 
    while( !window->ShouldClose() )
@@ -155,7 +158,6 @@ int main( int argc, char** argv )
 
       window->NextBuffer();
    }
-
 
    return 0;
 }

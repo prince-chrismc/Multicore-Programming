@@ -41,6 +41,7 @@ public:
    District getDistrict(const glm::vec2& pos) const;
 
    void insert(const Particle& particle);
+   bool outsideOfRegion(const Particle& particle);
 
 private:
    std::variant<int, Particle, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;

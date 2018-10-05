@@ -67,6 +67,9 @@ Quadrant::District Quadrant::getDistrict( const glm::vec2& pos ) const
 
 void Quadrant::insert( const Particle& particle )
 {
+   if( outsideOfRegion( particle ) )
+      return; // Don't even bother =)
+
    if( auto pval = std::get_if<Particle>( &m_Contains ) )
    {
       Particle existingParticles = *pval;
@@ -92,6 +95,28 @@ void Quadrant::insert( const Particle& particle )
    {
       m_Contains.emplace<Particle>( particle );
    }
+}
+
+bool Quadrant::outsideOfRegion(const Particle& particle)
+{
+   // https://stackoverflow.com/a/42396910/8480874
+   auto calcVector = []( glm::vec2 p1, glm::vec2 p2 )->glm::vec2 {
+      return{ p2.x - p1.x , -1 * ( p2.y - p1.y ) };
+   };
+
+   auto isPointWithinFourCornersOfRectangle = [ calcVector ]( glm::vec2 A, glm::vec2 B, glm::vec2 C, glm::vec2 D, glm::vec2 m )->bool {
+      glm::vec2 AB = calcVector( A, B );  float C1 = -1 * ( AB.y*A.x + AB.x*A.y ); float D1 = ( AB.y*m.x + AB.x*m.y ) + C1;
+      glm::vec2 AD = calcVector( A, D );  float C2 = -1 * ( AD.y*A.x + AD.x*A.y ); float D2 = ( AD.y*m.x + AD.x*m.y ) + C2;
+      glm::vec2 BC = calcVector( B, C );  float C3 = -1 * ( BC.y*B.x + BC.x*B.y ); float D3 = ( BC.y*m.x + BC.x*m.y ) + C3;
+      glm::vec2 CD = calcVector( C, D );  float C4 = -1 * ( CD.y*C.x + CD.x*C.y ); float D4 = ( CD.y*m.x + CD.x*m.y ) + C4;
+
+      return 0 >= D1 && 0 >= D4 && 0 <= D2 && 0 >= D3;
+   };
+
+   return ! isPointWithinFourCornersOfRectangle( glm::vec2{ m_MaxX, m_MaxY }, glm::vec2{ m_MaxX, m_MinY },
+                                                 glm::vec2{ m_MinX, m_MinY }, glm::vec2{ m_MinX, m_MaxY },
+                                                 particle.m_Pos
+   );
 }
 
 Quadrant::Model::Model( float x_min, float y_min, float x_max, float y_max )
