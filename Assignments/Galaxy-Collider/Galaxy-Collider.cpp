@@ -114,6 +114,13 @@ public:
       glBindVertexArray( m_VAO );
       glDrawArrays( GL_LINES, 0, m_NumVertices );
       glBindVertexArray( 0 );
+
+      shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::RED );
+
+      if( auto pval = std::get_if<Particle>( &m_Contains ) )
+         pval->Draw();
+      else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
+         for( auto& quad : *pval ) quad->Draw();
    }
 
    District getDistrict( const glm::vec2 & pos ) const
@@ -141,8 +148,13 @@ public:
          };
 
          oChildQuads[ getDistrict( existingParticles.m_Pos ) ]->insert( existingParticles );
+         oChildQuads[ getDistrict( particle.m_Pos ) ]->insert( particle );
 
          m_Contains.emplace<std::array<std::unique_ptr<Quadrant>, 4>>( std::move( oChildQuads ) );
+      }
+      else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
+      {
+         ( *pval )[ getDistrict( particle.m_Pos ) ]->insert( particle );
       }
       else
       {
@@ -229,14 +241,16 @@ int main( int argc, char** argv )
    auto shaderProgram = ShaderLinker::GetInstance();
 
 
-   Particle particle( 1.0, 1.0, 1.0 );
+   Particle particle_one( 1.0, 1.0, 1.0 );
+   Particle particle_two( 2.0, -3.0, 1.0 );
 
    Galaxy galaxy( ObjectColors::TEAL, -5.0f, 5.0f, 7.5f, 10000 );
 
    Quadrant root( Quadrant::NE, -5.0f, -5.0f, 5.0f, 5.0f );
 
+   root.insert( particle_one );
+   root.insert( particle_two );
 
-   //root.insert( particle );
 
    while( !window->ShouldClose() )
    {
@@ -251,7 +265,6 @@ int main( int argc, char** argv )
 
       // Draw Loop
       shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::RED );
-      particle.Draw();
 
       galaxy.Draw();
 
