@@ -22,9 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
-
 #include "Galaxy.h"
+#include "Linked.h"
+#include <tuple>
 #include <random>
 
 Blackhole::Blackhole( float x, float y ) : Particle( x, y, LDBL_MAX )
@@ -33,34 +33,40 @@ Blackhole::Blackhole( float x, float y ) : Particle( x, y, LDBL_MAX )
 
 void Blackhole::Draw() const
 {
-   Shader::Linked::GetInstance()->SetUniformInt("object_color", (GLint)ObjectColors::YELLOW);
+   Shader::Linked::GetInstance()->SetUniformInt( "object_color", (GLint)ObjectColors::YELLOW );
    Particle::Draw();
 }
 
-Galaxy::Galaxy(ObjectColors col, float x, float y, float radius, size_t particles): m_Blackhole(x, y), m_Color(col)
+bool GlmVec2Comparator::operator()(const glm::vec2& l, const glm::vec2& r) const
+{
+   return std::tie(l.x, l.y) < std::tie(r.x, r.y);
+}
+
+Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particles ) : m_Blackhole( x, y ), m_Color( col )
 {
    static constexpr const long double PI = 3.141592653589793238462643383279502884L;
 
    std::random_device rd;
-   std::mt19937 gen(rd());
-   std::lognormal_distribution<float> numGen(0.0f, 1.25f);
+   std::mt19937 gen( rd() );
+   std::lognormal_distribution<long double> numGenPos( 0.0L, 1.25L );
+   std::lognormal_distribution<long double> numGenMass( 25.0L, 2.75L );
 
-   for (size_t i = 0; i < particles; i++)
+   for( size_t i = 0; i < particles; i++ )
    {
-      float a = numGen(gen) * 2.0f * PI;
-      float r = sqrt( numGen( gen ) * radius );
+      float a = static_cast<float>( numGenPos( gen ) * 2.0L * PI );
+      float r = static_cast<float>( sqrt( numGenPos( gen ) * radius ) );
 
       // in Cartesian coordinates
-      float rel_x = r * cos(a);
-      float rel_y = r * sin(a);
+      float rel_x = r * cos( a );
+      float rel_y = r * sin( a );
 
-      m_Stars.insert(std::make_pair(glm::vec2{rel_x + x, rel_y + y}, Particle(rel_x + x, rel_y + y, gen())));
+      m_Stars.insert( std::make_pair( glm::vec2{ rel_x + x, rel_y + y }, Particle( rel_x + x, rel_y + y, numGenMass( gen ) ) ) );
    }
 }
 
 void Galaxy::Draw() const
 {
    m_Blackhole.Draw();
-   Shader::Linked::GetInstance()->SetUniformInt("object_color", (GLint)m_Color);
-   for (auto& Particle : m_Stars) Particle.second.Draw();
+   Shader::Linked::GetInstance()->SetUniformInt( "object_color", (GLint)m_Color );
+   for( auto& Particle : m_Stars ) Particle.second.Draw();
 }

@@ -25,31 +25,44 @@ SOFTWARE.
 #pragma once
 
 #include "Particle.h"
-#include "ObjectColors.h"
-#include <map>
+#include <variant>
+#include <array>
+#include <memory>
 
-class Blackhole final : public Particle
+class Quadrant
 {
 public:
-   Blackhole(float x, float y);
+   enum District { NE, SE, SW, NW };
 
-   void Draw() const override;
-};
-
-struct GlmVec2Comparator
-{
-   bool operator()(const glm::vec2& l, const glm::vec2& r) const;
-};
-
-class Galaxy
-{
-public:
-   Galaxy(ObjectColors col, float x, float y, float radius, size_t particles);
+   Quadrant(District disc, float x_min, float y_min, float x_max, float y_max);
 
    void Draw() const;
 
+   District getDistrict(const glm::vec2& pos) const;
+
+   void insert(const Particle& particle);
+
 private:
-   Blackhole m_Blackhole;
-   ObjectColors m_Color;
-   std::map<glm::vec2, Particle, GlmVec2Comparator> m_Stars;
+   std::variant<int, Particle, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
+
+   District m_District;
+   float m_MinX;
+   float m_MinY;
+   float m_MaxX;
+   float m_MaxY;
+   glm::vec2 m_Center{};
+
+   class Model
+   {
+   public:
+      Model( float x_min, float y_min, float x_max, float y_max );
+      ~Model();
+
+      void Draw() const;
+   private:
+      GLuint m_VAO{};
+      GLuint m_Vertices{};
+
+      GLsizei m_NumVertices;
+   } m_oModel;
 };

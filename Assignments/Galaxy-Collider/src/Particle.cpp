@@ -23,7 +23,9 @@ SOFTWARE.
 */
 
 #include "Particle.h"
+#include "Linked.h"
 #include <vector>
+#include "Quadrant.h"
 
 std::once_flag Particle::Model::s_Flag;
 std::unique_ptr<Particle::Model> Particle::Model::s_Instance;

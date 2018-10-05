@@ -23,9 +23,11 @@ SOFTWARE.
 */
 
 #pragma once
+
+#include <mutex>
+#include <memory>
 #include <GL/glew.h>
-#include "glm/vec3.hpp"
-#include "Linked.h"
+#include "glm/vec2.hpp"
 
 class Particle
 {
