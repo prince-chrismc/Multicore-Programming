@@ -37,6 +37,151 @@ typedef Shader::Linked ShaderLinker;
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <variant>
+#include <array>
+#include <memory>
+
+class Quadrant
+{
+public:
+   enum District { NE, SE, SW, NW };
+
+   Quadrant( District disc, float x_min, float y_min, float x_max, float y_max ) : m_District( disc ),
+      m_MinX( x_min ),
+      m_MinY( y_min ),
+      m_MaxX( x_max ),
+      m_MaxY( y_max ),
+      m_Center(
+         m_MinX + ( m_MaxX - m_MinX ) / 2.0f,
+         m_MinY + ( m_MaxY - m_MinY ) / 2.0f
+      )
+   {
+      const GLuint PositonIndex = Shader::Linked::GetInstance()->GetAttributeLocation( "position" );
+
+      std::vector<glm::vec3> vertices( { { m_MinX, m_MinY, 0.0f }, { m_MinX, m_MaxY, 0.0f },
+                                         { m_MinX, m_MaxY, 0.0f }, { m_MaxX, m_MaxY, 0.0f },
+                                         { m_MaxX, m_MaxY, 0.0f }, { m_MaxX, m_MinY, 0.0f },
+                                         { m_MaxX, m_MinY, 0.0f }, { m_MinX, m_MinY, 0.0f } } );
+
+      glGenVertexArrays( 1, &m_VAO );
+      glBindVertexArray( m_VAO );
+
+      glGenBuffers( 1, &m_Vertices );
+      glBindBuffer( GL_ARRAY_BUFFER, m_Vertices );
+      glBufferData( GL_ARRAY_BUFFER, vertices.size() * sizeof( glm::vec3 ), &vertices.front(), GL_STATIC_DRAW );
+      glVertexAttribPointer( PositonIndex, 3, GL_FLOAT, GL_FALSE, 3 * sizeof( GLfloat ), (GLvoid*)0 );
+      glEnableVertexAttribArray( PositonIndex );
+      glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+      glBindVertexArray( 0 );
+
+      m_NumVertices = (GLsizei)vertices.size();
+   }
+
+   ~Quadrant()
+   {
+      glDeleteBuffers( 1, &m_Vertices );
+      glDeleteVertexArrays( 1, &m_VAO );
+   }
+
+   void Draw() const
+   {
+      auto shaderProgram = Shader::Linked::GetInstance();
+      shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::GREY );
+      shaderProgram->SetUniformMat4( "model_matrix", glm::mat4(1.0f) );
+
+      glBindVertexArray( m_VAO );
+      glDrawArrays( GL_LINES, 0, m_NumVertices );
+      glBindVertexArray( 0 );
+   }
+
+   District getDistrict( const glm::vec2 & pos ) const
+   {
+      if( pos.x <= m_Center.x && pos.y <= m_Center.y ) return SW;
+      if( pos.x <= m_Center.x && pos.y >= m_Center.y ) return NW;
+      if( pos.x >= m_Center.x && pos.y >= m_Center.y ) return NE;
+      if( pos.x >= m_Center.x && pos.y <= m_Center.y ) return SE;
+
+      throw std::runtime_error( "Can't determine quadrant!" );
+   }
+
+   void insert( const Particle& particle )
+   {
+      if( auto pval = std::get_if<Particle>( &m_Contains ) )
+      {
+         Particle existingParticles = *pval;
+
+         std::array<std::unique_ptr<Quadrant>, 4> oChildQuads =
+         {
+            std::make_unique<Quadrant>( NE, m_Center.x, m_Center.y, m_MaxX, m_MaxY ),
+            std::make_unique<Quadrant>( SE, m_Center.x, m_MinY, m_MaxX, m_Center.y ),
+            std::make_unique<Quadrant>( SW, m_MinX, m_MinY, m_Center.x, m_Center.y ),
+            std::make_unique<Quadrant>( NW, m_MinX, m_Center.y, m_Center.x, m_MaxY )
+         };
+
+         oChildQuads[ getDistrict( existingParticles.m_Pos ) ]->insert( existingParticles );
+
+         m_Contains.emplace<std::array<std::unique_ptr<Quadrant>, 4>>( std::move( oChildQuads ) );
+      }
+      else
+      {
+         m_Contains.emplace<Particle>( particle );
+      }
+   }
+
+   std::variant<int, Particle, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
+
+
+   District m_District;
+   float m_MinX;
+   float m_MinY;
+   float m_MaxX;
+   float m_MaxY;
+   glm::vec2 m_Center{};
+
+   GLuint m_VAO{};
+   GLuint m_Vertices{};
+
+   GLsizei m_NumVertices;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int main( int argc, char** argv )
 {
    std::cout << argv[ 0 ] << std::endl;
@@ -84,10 +229,14 @@ int main( int argc, char** argv )
    auto shaderProgram = ShaderLinker::GetInstance();
 
 
-   Particle particle( 0.0, 0.0, 1.0 );
+   Particle particle( 1.0, 1.0, 1.0 );
 
    Galaxy galaxy( ObjectColors::TEAL, -5.0f, 5.0f, 7.5f, 10000 );
 
+   Quadrant root( Quadrant::NE, -5.0f, -5.0f, 5.0f, 5.0f );
+
+
+   //root.insert( particle );
 
    while( !window->ShouldClose() )
    {
@@ -103,7 +252,10 @@ int main( int argc, char** argv )
       // Draw Loop
       shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::RED );
       particle.Draw();
+
       galaxy.Draw();
+
+      root.Draw();
 
       window->NextBuffer();
    }
@@ -115,17 +267,8 @@ int main( int argc, char** argv )
 //
 // Models
 //
-class Quadrant
-{
-public:
-   enum District { NE, SE, SW, NW };
 
-   Quadrant( District disc, long double x, long double y ) : m_District( disc ) {}
 
-   void Draw() const { /* TBA */ }
-
-   District m_District;
-};
 
 
 //
