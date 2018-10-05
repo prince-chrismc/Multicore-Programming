@@ -48,7 +48,6 @@ public:
 
    void Draw() const;
 
-private:
    Blackhole m_Blackhole;
    ObjectColors m_Color;
    std::map<glm::vec2, Particle, GlmVec2Comparator> m_Stars;

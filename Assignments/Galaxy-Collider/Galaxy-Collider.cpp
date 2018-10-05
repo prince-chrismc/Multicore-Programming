@@ -38,42 +38,13 @@ typedef Shader::Linked ShaderLinker;
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 
+void operator<<(Quadrant& lhs, const Galaxy& rhs)
+{
+   lhs.insert( rhs.m_Blackhole );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   for( auto& star : rhs.m_Stars )
+      lhs.insert( star.second );
+}
 
 int main( int argc, char** argv )
 {
@@ -121,22 +92,10 @@ int main( int argc, char** argv )
    auto window = GlfwWindow::GetInstance();
    auto shaderProgram = ShaderLinker::GetInstance();
 
-
-   Particle particle_one( 1.0f, 1.0f, 1.0 );
-   Particle particle_two( 2.0f, -3.0f, 1.0 );
-   Particle particle_three( 1.9999f, -3.00001f, 1.0 );
-   Particle particle_out( 6.0f, 1.0f, 2.0 );
-
    Galaxy galaxy( ObjectColors::TEAL, -5.0f, 5.0f, 7.5f, 10000 );
-
    Quadrant root( Quadrant::NE, -5.0f, -5.0f, 5.0f, 5.0f );
 
-   root.insert( particle_one );
-   root.insert( particle_two );
-   root.insert( particle_three );
-
-   root.insert( particle_out );
-
+   root << galaxy;
 
    while( !window->ShouldClose() )
    {

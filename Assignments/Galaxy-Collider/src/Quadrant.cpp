@@ -47,11 +47,11 @@ void Quadrant::Draw() const
 
    m_oModel.Draw();
 
-   shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::RED );
+   //shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::RED );
 
-   if( auto pval = std::get_if<Particle>( &m_Contains ) )
+   /*if( auto pval = std::get_if<Particle>( &m_Contains ) )
       pval->Draw();
-   else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
+   else*/ if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
       for( auto& quad : *pval ) quad->Draw();
 }
 
