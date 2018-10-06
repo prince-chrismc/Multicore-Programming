@@ -60,7 +60,7 @@ void Quadrant::insert( const Particle& particle )
 
       m_Contains.emplace<std::array<std::unique_ptr<Quadrant>, 4>>( std::move( oChildQuads ) );
 
-      m_CenterOfMass = glm::vec2{0.0f,0.0f};
+      m_CenterOfMass = glm::vec2{ 0.0f,0.0f };
       m_Mass = 0.0f;
       updateMassDistribution();
    }
@@ -79,6 +79,36 @@ void Quadrant::insert( const Particle& particle )
    m_TotalParticles++;
 }
 
+glm::vec2 Quadrant::calcForce( const Particle& particle )
+{
+   glm::vec2 acc{ 0.0f, 0.0f };
+
+   if( auto pval = std::get_if<Particle>( &m_Contains ) )
+   {
+      acc = calcAcceleration( particle, *pval );
+   }
+   else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
+   {
+      float d = m_Space.getHeight();
+      float r = sqrt( ( particle.m_Pos.x - m_CenterOfMass.x ) * ( particle.m_Pos.x - m_CenterOfMass.x ) +
+                      ( particle.m_Pos.y - m_CenterOfMass.y ) * ( particle.m_Pos.y - m_CenterOfMass.y ) );
+
+      if( d / r < THETA )
+      {
+         const float k = GAMMA * m_Mass / ( r*r*r );
+         acc.x = k * ( m_CenterOfMass.x - particle.m_Pos.x );
+         acc.y = k * ( m_CenterOfMass.y - particle.m_Pos.y );
+      }
+      else
+      {
+         for( auto& quad : *pval )
+            acc += quad->calcForce( particle );
+      }
+   }
+
+   return acc;
+}
+
 void Quadrant::updateMassDistribution()
 {
    for( auto& quad : std::get<2>( m_Contains ) )
@@ -89,6 +119,31 @@ void Quadrant::updateMassDistribution()
       m_CenterOfMass += quad->m_Mass * quad->m_CenterOfMass;
    }
    m_CenterOfMass /= m_Mass;
+}
+
+glm::vec2 Quadrant::calcAcceleration( const Particle& particle_one, const Particle& particle_two )
+{
+   glm::vec2 acc{ 0.0f, 0.0f };
+
+   if( &particle_one == &particle_two )
+      return acc;
+
+    // assign references to the variables in a readable form
+   const float &x1( particle_one.m_Pos.x ), &y1( particle_one.m_Pos.y );
+   const float &x2( particle_two.m_Pos.x ), &y2( particle_two.m_Pos.y );
+   const float &m2( particle_two.m_Mass );
+
+   const float r = sqrt( ( x1 - x2 ) * ( x1 - x2 ) + ( y1 - y2 ) * ( y1 - y2 ) );
+
+   if( r > 0 ) // if distance is greater zero
+   {
+      const float k = GAMMA * m2 / ( r*r*r );
+
+      acc.x += k * ( x2 - x1 );
+      acc.y += k * ( y2 - y1 );
+   }
+
+   return acc;
 }
 
 //
@@ -146,6 +201,11 @@ Quadrant::District Quadrant::Spacial::determineChildDistrict( const glm::vec2& p
    if( pos.x <= m_Center.x && pos.y >= m_Center.y ) return NW;
 
    throw std::runtime_error( "Can't determine quadrant!" );
+}
+
+float Quadrant::Spacial::getHeight() const
+{
+   return m_MaxX - m_MinX;
 }
 
 //

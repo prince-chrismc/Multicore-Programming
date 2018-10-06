@@ -40,6 +40,8 @@ public:
 
    void insert(const Particle& particle);
 
+   glm::vec2 calcForce( const Particle& particle );
+
 private:
 
    std::variant<int, Particle, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
@@ -51,6 +53,12 @@ private:
 
    void updateMassDistribution();
 
+   static constexpr const float THETA = 1.5f;
+   static constexpr const float GAMMA = 0.1f;
+
+
+   static glm::vec2 calcAcceleration( const Particle& particle_one, const Particle& particle_two );
+
    class Spacial
    {
    public:
@@ -59,6 +67,7 @@ private:
       bool outsideOfRegion( const Particle& particle ) const;
       std::array<std::unique_ptr<Quadrant>, 4> makeChildDistricts() const;
       District determineChildDistrict( const glm::vec2& pos ) const;
+      float getHeight() const;
 
    private:
       District m_District;
