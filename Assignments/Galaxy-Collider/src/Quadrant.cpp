@@ -117,14 +117,17 @@ void Quadrant::print()
 
 void Quadrant::updateMassDistribution()
 {
-   for( auto& quad : std::get<2>( m_Contains ) )
+   if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
    {
-      if( quad->m_TotalParticles == 0 ) continue;
+      for( auto& quad : *pval )
+      {
+         if( quad->m_TotalParticles == 0 ) continue;
 
-      m_Mass += quad->m_Mass;
-      m_CenterOfMass += quad->m_Mass * quad->m_CenterOfMass;
+         m_Mass += quad->m_Mass;
+         m_CenterOfMass += quad->m_Mass * quad->m_CenterOfMass;
+      }
+      m_CenterOfMass /= m_Mass;
    }
-   m_CenterOfMass /= m_Mass;
 }
 
 glm::vec2 Quadrant::calcAcceleration( const Particle& particle_one, const Particle& particle_two )
