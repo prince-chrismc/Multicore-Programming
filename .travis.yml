@@ -2,7 +2,7 @@ sudo: false
 language: cpp
 matrix:
   include:
-      - os: linux
+    - os: linux
       addons:
         apt:
           sources:
@@ -16,9 +16,9 @@ matrix:
             - libxcursor-dev
             - libxi-dev
       env:
-      - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
       
-      - os: linux
+    - os: linux
       addons:
         apt:
           sources:
@@ -32,7 +32,7 @@ matrix:
             - libxcursor-dev
             - libxi-dev
       env:
-      - MATRIX_EVAL="CC=clang-6.0 && CXX=clang++-6.0"
+        - MATRIX_EVAL="CC=clang-6.0 && CXX=clang++-6.0"
       
     - os: linux
       addons:
@@ -48,7 +48,7 @@ matrix:
             - libxcursor-dev
             - libxi-dev
       env:
-      - MATRIX_EVAL="CC=clang-7 && CXX=clang++-7"
+        - MATRIX_EVAL="CC=clang-7 && CXX=clang++-7"
         
     - os: linux
       addons:
