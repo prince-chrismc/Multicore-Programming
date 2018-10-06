@@ -93,8 +93,8 @@ int main( int argc, char** argv )
    auto shaderProgram = ShaderLinker::GetInstance();
 
    //Galaxy galaxy_one( ObjectColors::BLUE, -5.0f, 5.0f, 7.5f, 10000 );
-   Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
-   Galaxy galaxy_small( ObjectColors::YELLOW, -3.0f, 5.0f, 0.125f, 500 );
+   //Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
+   Galaxy galaxy_small( ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 1000 );
 
    //root << galaxy_one;
 
@@ -111,7 +111,7 @@ int main( int argc, char** argv )
 
       Quadrant root( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
       root << galaxy_small;
-      root << galaxy_two;
+      //root << galaxy_two;
 
       root.print();
 
@@ -120,17 +120,17 @@ int main( int argc, char** argv )
 
       //galaxy_one.Draw();
       galaxy_small.Draw();
-      galaxy_two.Draw();
+      //galaxy_two.Draw();
 
       galaxy_small.m_Blackhole.m_Pos += root.calcForce( galaxy_small.m_Blackhole );
 
       for( auto& star : galaxy_small.m_Stars )
          star.second.m_Pos += root.calcForce( star.second );
 
-      galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
+      //galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
 
-      for( auto& star : galaxy_two.m_Stars )
-         star.second.m_Pos += root.calcForce( star.second );
+      //for( auto& star : galaxy_two.m_Stars )
+      //   star.second.m_Pos += root.calcForce( star.second );
 
 
       window->NextBuffer();
