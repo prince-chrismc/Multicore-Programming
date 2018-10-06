@@ -25,6 +25,7 @@ SOFTWARE.
 #include "Quadrant.h"
 #include "Linked.h"
 #include "ObjectColors.h"
+#include <vector>
 
 Quadrant::Quadrant( District disc, float x_min, float y_min, float x_max, float y_max ) :
    m_TotalParticles( 0 ), m_CenterOfMass( 0.0f ), m_Mass( 0.0L ),
