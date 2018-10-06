@@ -27,7 +27,7 @@ SOFTWARE.
 #include <tuple>
 #include <random>
 
-Blackhole::Blackhole( float x, float y ) : Particle( x, y, 1.76f )
+Blackhole::Blackhole( float x, float y ) : Particle( x, y, 11.96f )
 {
 }
 

@@ -93,7 +93,7 @@ int main( int argc, char** argv )
    auto shaderProgram = ShaderLinker::GetInstance();
 
    //Galaxy galaxy_one( ObjectColors::BLUE, -5.0f, 5.0f, 7.5f, 10000 );
-   Galaxy galaxy_two( ObjectColors::RED, 1.0f, -4.0f, 0.25f, 10000 );
+   Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
    Galaxy galaxy_small( ObjectColors::YELLOW, -3.0f, 5.0f, 0.125f, 500 );
 
    //root << galaxy_one;
@@ -112,6 +112,8 @@ int main( int argc, char** argv )
       Quadrant root( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
       root << galaxy_small;
       root << galaxy_two;
+
+      root.print();
 
       // Draw Loop
       root.Draw();

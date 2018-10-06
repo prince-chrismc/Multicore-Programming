@@ -41,6 +41,7 @@ public:
    void insert(const Particle& particle);
 
    glm::vec2 calcForce( const Particle& particle );
+   void print();
 
 private:
 
@@ -53,8 +54,8 @@ private:
 
    void updateMassDistribution();
 
-   static constexpr const float THETA = 0.25f;
-   static constexpr const float GAMMA = 0.000000000000001f;
+   static constexpr const float THETA = 0.6f;
+   static constexpr const float GAMMA = 0.00000000000001f;
 
 
    static glm::vec2 calcAcceleration( const Particle& particle_one, const Particle& particle_two );
