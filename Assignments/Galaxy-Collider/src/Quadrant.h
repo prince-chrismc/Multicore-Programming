@@ -54,7 +54,7 @@ private:
    void updateMassDistribution();
 
    static constexpr const float THETA = 1.5f;
-   static constexpr const float GAMMA = 0.1f;
+   static constexpr const float GAMMA = 0.000000000001f;
 
 
    static glm::vec2 calcAcceleration( const Particle& particle_one, const Particle& particle_two );
