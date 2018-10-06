@@ -26,7 +26,7 @@ SOFTWARE.
 #include "Linked.h"
 #include <tuple>
 #include <random>
-#include <limit>
+#include <limits>
 
 Blackhole::Blackhole( float x, float y ) : Particle( x, y, 11.96f )
 {
