@@ -1,23 +1,7 @@
 sudo: false
 language: cpp
 matrix:
-  include:
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - clang-5.0
-            - libstdc++5
-            - libxrandr-dev
-            - libxinerama-dev
-            - libxcursor-dev
-            - libxi-dev
-      env:
-        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
-      
+  include:      
     - os: linux
       addons:
         apt:
@@ -56,20 +40,6 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-6
-            - libxrandr-dev
-            - libxinerama-dev
-            - libxcursor-dev
-            - libxi-dev
-      env:
-        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
-        
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
             - g++-7
             - libxrandr-dev
             - libxinerama-dev
@@ -99,11 +69,6 @@ matrix:
 
     - os: osx
       osx_image: xcode9.4
-      env:
-        - MATRIX_EVAL=""
-
-    - os: osx
-      osx_image: xcode8.3
       env:
         - MATRIX_EVAL=""
 
