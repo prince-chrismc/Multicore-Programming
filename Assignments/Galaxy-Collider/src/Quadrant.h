@@ -43,6 +43,9 @@ public:
    glm::vec2 calcForce( const Particle& particle );
    void print();
 
+   static constexpr const float THETA = 0.6f;
+   static constexpr const float GAMMA = 0.00000001f;
+   //static constexpr const float GAMMA = 0.00000000000001f;
 private:
 
    std::variant<int, Particle, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
@@ -54,8 +57,6 @@ private:
 
    void updateMassDistribution();
 
-   static constexpr const float THETA = 0.6f;
-   static constexpr const float GAMMA = 0.00000000000001f;
 
 
    static glm::vec2 calcAcceleration( const Particle& particle_one, const Particle& particle_two );

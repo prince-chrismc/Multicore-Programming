@@ -28,7 +28,7 @@ SOFTWARE.
 #include <random>
 #include <limits>
 
-Blackhole::Blackhole( float x, float y ) : Particle( x, y, 11.96f )
+Blackhole::Blackhole( float x, float y ) : Particle( x, y, 453.485f )
 {
 }
 

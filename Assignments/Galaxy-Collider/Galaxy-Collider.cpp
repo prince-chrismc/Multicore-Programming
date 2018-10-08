@@ -94,7 +94,7 @@ int main( int argc, char** argv )
 
    //Galaxy galaxy_one( ObjectColors::BLUE, -5.0f, 5.0f, 7.5f, 10000 );
    //Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
-   Galaxy galaxy_small( ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 1000 );
+   Galaxy galaxy_small( ObjectColors::GREEN, -3.0f, 2.1f, 0.125f, 1000 );
 
    //root << galaxy_one;
 
@@ -122,11 +122,30 @@ int main( int argc, char** argv )
       galaxy_small.Draw();
       //galaxy_two.Draw();
 
-      galaxy_small.m_Blackhole.m_Pos += root.calcForce( galaxy_small.m_Blackhole );
+      //galaxy_small.m_Blackhole.m_Pos += root.calcForce( galaxy_small.m_Blackhole );
 
       for( auto& star : galaxy_small.m_Stars )
-         star.second.m_Pos += root.calcForce( star.second );
+      //   star.second.m_Pos += root.calcForce( star.second );
+      {
+         const float &x1( galaxy_small.m_Blackhole.m_Pos.x ), &y1( galaxy_small.m_Blackhole.m_Pos.y );
+         const float &m1( galaxy_small.m_Blackhole.m_Mass );
+         const float &x2( star.second.m_Pos.x ), &y2( star.second.m_Pos.y );
 
+           // Calculate distance from the planet with index idx_main
+         double r[ 2 ], dist;
+         r[ 0 ] = x1 - x2;
+         r[ 1 ] = y1 - y2;
+
+         // distance in parsec
+         dist = sqrt( r[ 0 ] * r[ 0 ] + r[ 1 ] * r[ 1 ] );
+
+         // Based on the distance from the sun calculate the velocity needed to maintain a circular orbit
+         double v = sqrt( Quadrant::GAMMA * m1 / dist );
+
+         // Calculate a suitable vector perpendicular to r for the velocity of the tracer
+         star.second.m_Pos.x += ( r[ 1 ] / dist ) * v;
+         star.second.m_Pos.y += ( -r[ 0 ] / dist ) * v;
+      }
       //galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
 
       //for( auto& star : galaxy_two.m_Stars )
