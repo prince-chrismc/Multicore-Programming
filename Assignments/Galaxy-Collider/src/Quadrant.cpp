@@ -25,11 +25,12 @@ SOFTWARE.
 #include "Quadrant.h"
 #include "Linked.h"
 #include "ObjectColors.h"
+#include <future>
 
 Quadrant::Quadrant( District disc, float x_min, float y_min, float x_max, float y_max ) :
    m_TotalParticles( 0 ), m_CenterOfMass( 0.0f ), m_Mass( 0.0L ),
-   m_Space( disc, x_min, y_min, x_max, y_max ),
-   m_oModel( x_min, y_min, x_max, y_max )
+   m_Space( disc, x_min, y_min, x_max, y_max )/*,
+   m_oModel( x_min, y_min, x_max, y_max )*/
 {
 }
 
@@ -39,13 +40,13 @@ void Quadrant::Draw() const
    shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::GREY );
    shaderProgram->SetUniformMat4( "model_matrix", glm::mat4( 1.0f ) );
 
-   m_oModel.Draw();
+   /*m_oModel.Draw();*/
 
    if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
       for( auto& quad : *pval ) quad->Draw();
 }
 
-void Quadrant::insert( const Particle& particle )
+void Quadrant::insert( const Particle& particle, unsigned long long depth /*= 0*/ )
 {
    if( m_Space.outsideOfRegion( particle ) )
       return; // Don't even bother =)
@@ -66,8 +67,25 @@ void Quadrant::insert( const Particle& particle )
    }
    else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
    {
-      ( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle );
-      updateMassDistribution();
+      if( depth > 3 )
+      {
+
+         std::thread( [ & ]()
+                     {
+                        m_QuadrantLocks[ m_Space.determineChildDistrict( particle.m_Pos ) ].lock();
+                        ( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle, ++depth );
+                        m_QuadrantLocks[ m_Space.determineChildDistrict( particle.m_Pos ) ].unlock();
+                        updateMassDistribution();
+                     }
+         ).detach();
+
+
+      }
+      else
+      {
+         ( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle, ++depth );
+         updateMassDistribution();
+      }
    }
    else
    {
@@ -91,7 +109,7 @@ glm::vec2 Quadrant::calcForce( const Particle& particle )
    {
       float d = m_Space.getHeight();
       float r = sqrt( ( particle.m_Pos.x - m_CenterOfMass.x ) * ( particle.m_Pos.x - m_CenterOfMass.x ) +
-                      ( particle.m_Pos.y - m_CenterOfMass.y ) * ( particle.m_Pos.y - m_CenterOfMass.y ) );
+         ( particle.m_Pos.y - m_CenterOfMass.y ) * ( particle.m_Pos.y - m_CenterOfMass.y ) );
 
       if( d / r < THETA )
       {

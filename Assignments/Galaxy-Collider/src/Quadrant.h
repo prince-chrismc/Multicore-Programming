@@ -28,6 +28,7 @@ SOFTWARE.
 #include <variant>
 #include <array>
 #include <memory>
+#include <mutex>
 
 class Quadrant
 {
@@ -38,7 +39,7 @@ public:
 
    void Draw() const;
 
-   void insert(const Particle& particle);
+   void insert(const Particle& particle, unsigned long long depth = 0);
 
    glm::vec2 calcForce( const Particle& particle );
    void print() const;
@@ -46,9 +47,12 @@ public:
 private:
 
    std::variant<int, Particle, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
+   std::array<std::mutex, 4> m_QuadrantLocks;
+
 
    unsigned long long m_TotalParticles;
 
+   std::mutex m_MassLock;
    glm::vec2 m_CenterOfMass;
    float m_Mass;
 
@@ -69,7 +73,6 @@ private:
       District determineChildDistrict( const glm::vec2& pos ) const;
       float getHeight() const;
 
-   private:
       District m_District;
       float m_MinX;
       float m_MinY;
@@ -90,5 +93,5 @@ private:
       GLuint m_Vertices{};
 
       GLsizei m_NumVertices;
-   } m_oModel;
+   } /*m_oModel*/;
 };
