@@ -109,7 +109,7 @@ glm::vec2 Quadrant::calcForce( const Particle& particle )
    return acc;
 }
 
-void Quadrant::print()
+void Quadrant::print() const
 {
    printf( "Center of Mass: { %f, %f }\r\n", m_CenterOfMass.x, m_CenterOfMass.y );
 }

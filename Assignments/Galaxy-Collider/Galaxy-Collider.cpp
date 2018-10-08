@@ -30,20 +30,46 @@ SOFTWARE.
 #include "Shaders.h"
 #include "Camera.h"
 #include <iostream>
+#include <functional>
 
 #include "Galaxy.h"
 #include "Quadrant.h"
+#include <future>
 
 typedef Shader::Linked ShaderLinker;
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 
-void operator<<(Quadrant& lhs, const Galaxy& rhs)
+void operator<<( std::unique_ptr<Quadrant>& lhs, const Galaxy& rhs)
 {
-   lhs.insert( rhs.m_Blackhole );
+   lhs->insert( rhs.m_Blackhole );
 
    for( auto& star : rhs.m_Stars )
-      lhs.insert( star.second );
+      lhs->insert( star.second );
+}
+
+// Inspired from https://stackoverflow.com/a/14244459/8480874 I use this a lot for my parellel computations...
+template < typename Iterator >
+void parellel_for_each_interval( Iterator begin, Iterator end, size_t interval_size , std::function<void( Iterator, Iterator )> operation )
+{
+   std::vector<std::future<void>> retvals;
+   auto to = begin;
+
+   while( to != end )
+   {
+      auto from = to;
+
+      auto counter = interval_size;
+      while( counter > 0 && to != end )
+      {
+         ++to;
+         --counter;
+      }
+
+      retvals.push_back( std::async( std::launch::async, operation, from, to ) );
+   }
+
+   for( auto& retval : retvals ) retval.get();
 }
 
 int main( int argc, char** argv )
@@ -93,8 +119,8 @@ int main( int argc, char** argv )
    auto shaderProgram = ShaderLinker::GetInstance();
 
    //Galaxy galaxy_one( ObjectColors::BLUE, -5.0f, 5.0f, 7.5f, 10000 );
-   Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
-   Galaxy galaxy_small( ObjectColors::YELLOW, -3.0f, 5.0f, 0.125f, 500 );
+   Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 5000 );
+   Galaxy galaxy_small( ObjectColors::YELLOW, -3.0f, 5.0f, 0.125f, 5000 );
 
    //root << galaxy_one;
 
@@ -109,31 +135,36 @@ int main( int argc, char** argv )
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
-      Quadrant root( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
+      std::unique_ptr<Quadrant> root = std::make_unique<Quadrant>( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
       root << galaxy_small;
       root << galaxy_two;
 
-      root.print();
+      //root->print();
 
       // Draw Loop
-      root.Draw();
+      root->Draw();
 
       //galaxy_one.Draw();
       galaxy_small.Draw();
       galaxy_two.Draw();
 
-      galaxy_small.m_Blackhole.m_Pos += root.calcForce( galaxy_small.m_Blackhole );
+      typedef decltype( galaxy_small.m_Stars.begin() ) iter_t;
+      auto calcForOnStarRange = [ pQuadrant = root.get() ]( iter_t from, iter_t to ) {
+         for( auto itor = from; itor != to; itor++ )
+            itor->second.m_Pos += pQuadrant->calcForce( itor->second );
+      };
 
-      for( auto& star : galaxy_small.m_Stars )
-         star.second.m_Pos += root.calcForce( star.second );
+      galaxy_small.m_Blackhole.m_Pos += root->calcForce( galaxy_small.m_Blackhole );
+      parellel_for_each_interval<iter_t>( galaxy_small.m_Stars.begin(), galaxy_small.m_Stars.end(),
+                                          galaxy_small.m_Stars.size() / std::thread::hardware_concurrency() + 1,
+                                          calcForOnStarRange );
 
-      galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
+      galaxy_two.m_Blackhole.m_Pos += root->calcForce( galaxy_two.m_Blackhole );
+      parellel_for_each_interval<iter_t>( galaxy_two.m_Stars.begin(), galaxy_two.m_Stars.end(),
+                                          galaxy_two.m_Stars.size() / std::thread::hardware_concurrency() + 1,
+                                          calcForOnStarRange );
 
-      for( auto& star : galaxy_two.m_Stars )
-         star.second.m_Pos += root.calcForce( star.second );
-
-
-      window->NextBuffer();
+     window->NextBuffer();
    }
 
    return 0;

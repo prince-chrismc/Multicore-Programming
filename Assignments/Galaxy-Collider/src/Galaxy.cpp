@@ -49,7 +49,7 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
    std::random_device rd;
    std::mt19937 gen( rd() );
    std::lognormal_distribution<long double> numGenPos( 0.0L, 2.5L );
-   std::lognormal_distribution<long double> numGenMass( 0.0L, 20.75L );
+   std::lognormal_distribution<long double> numGenMass( 0.0L, 2.75L );
 
    for( size_t i = 0; i < particles; i++ )
    {
@@ -60,7 +60,7 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
       float rel_x = r * cos( a );
       float rel_y = r * sin( a );
 
-      m_Stars.insert( std::make_pair( glm::vec2{ rel_x + x, rel_y + y }, Particle( rel_x + x, rel_y + y, 0.76f + static_cast<float>( numGenMass( gen ) / LDBL_MAX ) ) ) );
+      m_Stars.insert( std::make_pair( glm::vec2{ rel_x + x, rel_y + y }, Particle( rel_x + x, rel_y + y, 0.076f + static_cast<float>( numGenMass( gen ) / LDBL_MAX ) ) ) );
    }
 }
 
