@@ -137,7 +137,7 @@ int main( int argc, char** argv )
 
       std::unique_ptr<Quadrant> root = std::make_unique<Quadrant>( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
       root << galaxy_small;
-      root << galaxy_two;
+      //root << galaxy_two;
 
       //root->print();
 
@@ -146,7 +146,7 @@ int main( int argc, char** argv )
 
       //galaxy_one.Draw();
       galaxy_small.Draw();
-      galaxy_two.Draw();
+      //galaxy_two.Draw();
 
       typedef decltype( galaxy_small.m_Stars.begin() ) iter_t;
       auto calcForOnStarRange = [ pQuadrant = root.get() ]( iter_t from, iter_t to ) {
@@ -158,6 +158,34 @@ int main( int argc, char** argv )
       parellel_for_each_interval<iter_t>( galaxy_small.m_Stars.begin(), galaxy_small.m_Stars.end(),
                                           galaxy_small.m_Stars.size() / std::thread::hardware_concurrency() + 1,
                                           calcForOnStarRange );
+     ////galaxy_small.m_Blackhole.m_Pos += root.calcForce( galaxy_small.m_Blackhole );
+
+     //for( auto& star : galaxy_small.m_Stars )
+     ////   star.second.m_Pos += root.calcForce( star.second );
+     //{
+     //   const float &x1( galaxy_small.m_Blackhole.m_Pos.x ), &y1( galaxy_small.m_Blackhole.m_Pos.y );
+     //   const float &m1( galaxy_small.m_Blackhole.m_Mass );
+     //   const float &x2( star.second.m_Pos.x ), &y2( star.second.m_Pos.y );
+
+     //     // Calculate distance from the planet with index idx_main
+     //   double r[ 2 ], dist;
+     //   r[ 0 ] = x1 - x2;
+     //   r[ 1 ] = y1 - y2;
+
+     //   // distance in parsec
+     //   dist = sqrt( r[ 0 ] * r[ 0 ] + r[ 1 ] * r[ 1 ] );
+
+     //   // Based on the distance from the sun calculate the velocity needed to maintain a circular orbit
+     //   double v = sqrt( Quadrant::GAMMA * m1 / dist );
+
+     //   // Calculate a suitable vector perpendicular to r for the velocity of the tracer
+     //   star.second.m_Pos.x += ( r[ 1 ] / dist ) * v;
+     //   star.second.m_Pos.y += ( -r[ 0 ] / dist ) * v;
+     //}
+     ////galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
+
+     ////for( auto& star : galaxy_two.m_Stars )
+     ////   star.second.m_Pos += root.calcForce( star.second );
 
       galaxy_two.m_Blackhole.m_Pos += root->calcForce( galaxy_two.m_Blackhole );
       parellel_for_each_interval<iter_t>( galaxy_two.m_Stars.begin(), galaxy_two.m_Stars.end(),

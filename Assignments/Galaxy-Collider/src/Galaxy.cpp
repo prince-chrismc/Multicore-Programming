@@ -26,8 +26,9 @@ SOFTWARE.
 #include "Linked.h"
 #include <tuple>
 #include <random>
+#include <limits>
 
-Blackhole::Blackhole( float x, float y ) : Particle( x, y, 11.96f )
+Blackhole::Blackhole( float x, float y ) : Particle( x, y, 453.485f )
 {
 }
 
@@ -60,7 +61,8 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
       float rel_x = r * cos( a );
       float rel_y = r * sin( a );
 
-      m_Stars.insert( std::make_pair( glm::vec2{ rel_x + x, rel_y + y }, Particle( rel_x + x, rel_y + y, 0.076f + static_cast<float>( numGenMass( gen ) / LDBL_MAX ) / 10.0f ) ) );
+      //m_Stars.insert( std::make_pair( glm::vec2{ rel_x + x, rel_y + y }, Particle( rel_x + x, rel_y + y, 0.076f + static_cast<float>( numGenMass( gen ) / LDBL_MAX ) / 10.0f ) ) );
+      m_Stars.insert( std::make_pair( glm::vec2{ rel_x + x, rel_y + y }, Particle( rel_x + x, rel_y + y, 0.76f + static_cast<float>( numGenMass( gen ) / std::numeric_limits<float>::max() ) ) ) );
    }
 }
 
