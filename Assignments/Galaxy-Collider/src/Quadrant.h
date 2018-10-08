@@ -41,7 +41,7 @@ public:
 
    void insert(const Particle& particle, unsigned long long depth = 0);
 
-   glm::vec2 calcForce( const Particle& particle );
+   glm::vec2 calcForce( const Particle& particle, unsigned long long depth = 0 );
    void print() const;
 
 private:

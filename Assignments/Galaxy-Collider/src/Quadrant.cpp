@@ -65,25 +65,25 @@ void Quadrant::insert( const Particle& particle, unsigned long long depth /*= 0*
       m_Mass = 0.0f;
       updateMassDistribution();
    }
-   else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
+   else if( std::holds_alternative<std::array<std::unique_ptr<Quadrant>, 4>>( m_Contains ) )
    {
-      if( depth > 3 )
+      if( depth > 25 )
       {
 
-         std::thread( [ & ]()
-                     {
-                        m_QuadrantLocks[ m_Space.determineChildDistrict( particle.m_Pos ) ].lock();
-                        ( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle, ++depth );
-                        m_QuadrantLocks[ m_Space.determineChildDistrict( particle.m_Pos ) ].unlock();
-                        updateMassDistribution();
-                     }
+         std::thread( [ this, particle = particle, depth = depth ]()
+                      {
+                         m_QuadrantLocks[ m_Space.determineChildDistrict( particle.m_Pos ) ].lock();
+                         std::get<2>( m_Contains )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle, depth + 1 );
+                         m_QuadrantLocks[ m_Space.determineChildDistrict( particle.m_Pos ) ].unlock();
+                         updateMassDistribution();
+                      }
          ).detach();
 
 
       }
       else
       {
-         ( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle, ++depth );
+         std::get<2>( m_Contains )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle, ++depth );
          updateMassDistribution();
       }
    }
@@ -97,7 +97,7 @@ void Quadrant::insert( const Particle& particle, unsigned long long depth /*= 0*
    m_TotalParticles++;
 }
 
-glm::vec2 Quadrant::calcForce( const Particle& particle )
+glm::vec2 Quadrant::calcForce( const Particle& particle, unsigned long long depth /*= 0*/ )
 {
    glm::vec2 acc{ 0.0f, 0.0f };
 
@@ -105,7 +105,7 @@ glm::vec2 Quadrant::calcForce( const Particle& particle )
    {
       acc = calcAcceleration( particle, *pval );
    }
-   else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
+   else if( std::holds_alternative<std::array<std::unique_ptr<Quadrant>, 4>>( m_Contains ) )
    {
       float d = m_Space.getHeight();
       float r = sqrt( ( particle.m_Pos.x - m_CenterOfMass.x ) * ( particle.m_Pos.x - m_CenterOfMass.x ) +
@@ -119,8 +119,28 @@ glm::vec2 Quadrant::calcForce( const Particle& particle )
       }
       else
       {
-         for( auto& quad : *pval )
-            acc += quad->calcForce( particle );
+         if( depth > 1 )
+         {
+            for( auto& quad : std::get<2>( m_Contains ) )
+               acc += quad->calcForce( particle, ++depth );
+         }
+         else
+         {
+            std::vector<std::future<glm::vec2>> retval;
+            for( auto& quad : std::get<2>( m_Contains ) )
+            {
+               retval.push_back( std::async( std::launch::async,
+                                 [ &quad, particle = particle, depth = depth ]()
+                                 {
+                                    return quad->calcForce( particle, depth + 1 );
+                                 } ) );
+            }
+
+            for (auto& vec : retval)
+            {
+               acc += vec.get();
+            }
+         }
       }
    }
 
