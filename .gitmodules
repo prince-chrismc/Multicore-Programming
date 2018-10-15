@@ -1,3 +1,7 @@
 [submodule "Assignments/CGL"]
 	path = Assignments/CGL
 	url = https://github.com/prince-chrismc/Computer-Graphics-Libraries.git
+[submodule "Assignments/tbb"]
+	path = Assignments/tbb
+	url = https://github.com/wjakob/tbb.git
+	branch = master
