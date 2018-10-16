@@ -113,8 +113,6 @@ int main( int argc, char** argv )
       root << galaxy_small;
       //root << galaxy_two;
 
-      root.print();
-
       // Draw Loop
       root.Draw();
 

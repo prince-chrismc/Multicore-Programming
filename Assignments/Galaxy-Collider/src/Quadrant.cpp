@@ -110,11 +110,6 @@ glm::vec2 Quadrant::calcForce( const Particle& particle )
    return acc;
 }
 
-void Quadrant::print()
-{
-   printf( "Center of Mass: { %f, %f }\r\n", m_CenterOfMass.x, m_CenterOfMass.y );
-}
-
 void Quadrant::updateMassDistribution()
 {
    if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
