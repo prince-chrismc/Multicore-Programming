@@ -38,7 +38,7 @@ typedef Shader::Linked ShaderLinker;
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 
-void operator<<(Quadrant& lhs, const Galaxy& rhs)
+void operator<<( Quadrant& lhs, const Galaxy& rhs )
 {
    lhs.insert( rhs.m_Blackhole );
 
@@ -113,32 +113,15 @@ int main( int argc, char** argv )
    auto window = GlfwWindow::GetInstance();
    auto shaderProgram = ShaderLinker::GetInstance();
 
-   //Galaxy galaxy_one( ObjectColors::BLUE, -5.0f, 5.0f, 7.5f, 10000 );
+   Galaxy galaxy_one( ObjectColors::BLUE, 8.0f, -5.0f, 1.5f, 15000 );
    //Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
-   Galaxy galaxy_small( ObjectColors::GREEN, -5.5f, 8.1f, 2.125f, 15000 );
+   Galaxy galaxy_small( ObjectColors::GREEN, -5.5f, 8.1f, 2.125f, 25000 );
 
    //root << galaxy_one;
 
-   while( !window->ShouldClose() )
-   {
-      window->TriggerCallbacks();
-
-      // Clear the colorbuffer
-      glClearColor( 0.05f, 0.075f, 0.075f, 1.0f ); // near black teal
-      glClear( GL_COLOR_BUFFER_BIT );
-
-      shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
-      shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
-
-      //Quadrant root( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
-      //root << galaxy_small;
-
-      // Draw Loop
-      //root.Draw();
-      galaxy_small.Draw();
-
-      typedef decltype( galaxy_small.m_Stars.begin() ) iter_t;
-      auto calcForOnStarRange = [ blackhole = galaxy_small.m_Blackhole ]( iter_t from, iter_t to ) {
+   typedef decltype( galaxy_small.m_Stars.begin() ) iter_t;
+   auto calcForOnStarRange = []( Blackhole blackhole ) {
+      return [ blackhole = blackhole ]( iter_t from, iter_t to ) {
          for( auto itor = from; itor != to; itor++ )
          {
             const float &x1( blackhole.m_Pos.x ), &y1( blackhole.m_Pos.y );
@@ -162,11 +145,38 @@ int main( int argc, char** argv )
             itor->second.m_Pos.y += ( -r[ 0 ] / dist ) * v;
          }
       };
+   };
+
+   auto forceAroundSmall = calcForOnStarRange( galaxy_small.m_Blackhole );
+   auto forceAroundOne = calcForOnStarRange( galaxy_one.m_Blackhole );
+
+   while( !window->ShouldClose() )
+   {
+      window->TriggerCallbacks();
+
+      // Clear the colorbuffer
+      glClearColor( 0.05f, 0.075f, 0.075f, 1.0f ); // near black teal
+      glClear( GL_COLOR_BUFFER_BIT );
+
+      shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
+      shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
+
+      //Quadrant root( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
+      //root << galaxy_small;
+
+      // Draw Loop
+      //root.Draw();
+      galaxy_small.Draw();
+      galaxy_one.Draw();
 
       parellel_for_each_interval<iter_t>( galaxy_small.m_Stars.begin(), galaxy_small.m_Stars.end(),
                                           galaxy_small.m_Stars.size() / ( std::thread::hardware_concurrency() / 2 ) + 1,
-                                          calcForOnStarRange );
+                                          forceAroundSmall );
 
+
+      parellel_for_each_interval<iter_t>( galaxy_one.m_Stars.begin(), galaxy_one.m_Stars.end(),
+                                          galaxy_one.m_Stars.size() / ( std::thread::hardware_concurrency() / 2 ) + 1,
+                                          forceAroundOne );
 
       //for( auto& star : galaxy_small.m_Stars )
       //   star.second.m_Pos += root.calcForce( star.second );

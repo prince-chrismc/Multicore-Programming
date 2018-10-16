@@ -48,7 +48,7 @@ public:
 
    void Draw() const;
 
-   static constexpr const float GAMMA = 0.00000005f;
+   static constexpr const float GAMMA = 0.0000005f;
 
    Blackhole m_Blackhole;
    ObjectColors m_Color;
