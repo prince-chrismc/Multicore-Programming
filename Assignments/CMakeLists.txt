@@ -60,9 +60,6 @@ add_subdirectory(CGL)
 add_subdirectory(tbb)
 
 set( TBB_BUILD_SHARED OFF )
-set( TBB_BUILD_TBBMALLOC OFF )
-set( TBB_BUILD_TBBMALLOC_PROXY OFF )
-set( TBB_BUILD_TESTS OFF )
 
 FILE(GLOB GC_SOURCE_CODE "Galaxy-Collider/src/*")
 
