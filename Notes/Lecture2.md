@@ -63,6 +63,31 @@ Each processor maintains a w ork deque of ready threads, and it manipulates the 
 Provides a spin lock --> unlikely to use with extension symatics ... can not call `spawn` or `sync`
 
 ### Programming Distributed-Memory Architecture
-- Communication takes place in the form of _Message Passing_
+- Communication takes place in the form of _Message Passing_ which requires massive syncronization by both the Tx and Rx
 
+### Analysing Performance
+- Coverage  -   _Ahmdol's Law_
+- Granularity   -  work / thread 
+- Locality of computation anf communication
 
+##### Limits to scalabilty
+_Ahmdol's Law_
+- Programs have sequential and parrellel portions.. infers a max `Speed Up`
+- Granularity is a qualitative measure of the ratio of computation to communication
+   - Seperating computation and Communication with syncronization events
+   - fine grain : little compuation to lots of communication, little enhancement range + lots of overhead
+   - coarse grain : lots of computation with little communication, easier to gain in performance. requires load balancing!
+      - threads which finish earliest end up idling reducing the efficiency of the parrellelization
+
+Static Load Balancing
+- homogeneous multicores: each core gets equal work each does equal amount of work
+- heterogenous cores: some cores will be faster and compelete and fall idle
+
+Dynamic Load Balancing
+- Idle cores as assigned work
+- work seperation is unven or core performance is uneven
+
+### Granularity and Performance trade offs
+- pipelining communication and work phases
+- memory locatilty - each thread gets is own block vs each reading across blocks
+- memory latency - Uniform ( one main bank ) Non-Uniform ( multi level cache and DIMMS )
