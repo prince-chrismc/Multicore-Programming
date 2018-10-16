@@ -46,6 +46,27 @@ void operator<<(Quadrant& lhs, const Galaxy& rhs)
       lhs.insert( star.second );
 }
 
+// Inspired from https://stackoverflow.com/a/14244459/8480874 I use this a lot for my parellel computations...
+template < typename Iterator >
+void parellel_for_each_interval( Iterator begin, Iterator end, size_t interval_size, std::function<void( Iterator, Iterator )> operation )
+{
+   auto to = begin;
+
+   while( to != end )
+   {
+      auto from = to;
+
+      auto counter = interval_size;
+      while( counter > 0 && to != end )
+      {
+         ++to;
+         --counter;
+      }
+
+      std::thread( operation, from, to ).detach();
+   }
+}
+
 int main( int argc, char** argv )
 {
    std::cout << argv[ 0 ] << std::endl;
@@ -94,7 +115,7 @@ int main( int argc, char** argv )
 
    //Galaxy galaxy_one( ObjectColors::BLUE, -5.0f, 5.0f, 7.5f, 10000 );
    //Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
-   Galaxy galaxy_small( ObjectColors::GREEN, -3.0f, 2.1f, 0.125f, 1000 );
+   Galaxy galaxy_small( ObjectColors::GREEN, -5.5f, 8.1f, 2.125f, 15000 );
 
    //root << galaxy_one;
 
@@ -109,41 +130,46 @@ int main( int argc, char** argv )
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
-      Quadrant root( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
-      root << galaxy_small;
-      //root << galaxy_two;
+      //Quadrant root( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
+      //root << galaxy_small;
 
       // Draw Loop
-      root.Draw();
-
-      //galaxy_one.Draw();
+      //root.Draw();
       galaxy_small.Draw();
-      //galaxy_two.Draw();
 
-      //galaxy_small.m_Blackhole.m_Pos += root.calcForce( galaxy_small.m_Blackhole );
+      typedef decltype( galaxy_small.m_Stars.begin() ) iter_t;
+      auto calcForOnStarRange = [ blackhole = galaxy_small.m_Blackhole ]( iter_t from, iter_t to ) {
+         for( auto itor = from; itor != to; itor++ )
+         {
+            const float &x1( blackhole.m_Pos.x ), &y1( blackhole.m_Pos.y );
+            const float &m1( blackhole.m_Mass );
 
-      for( auto& star : galaxy_small.m_Stars )
+            const float &x2( itor->second.m_Pos.x ), &y2( itor->second.m_Pos.y );
+
+            // Calculate distance from the planet with index idx_main
+            double r[ 2 ], dist;
+            r[ 0 ] = x1 - x2;
+            r[ 1 ] = y1 - y2;
+
+            // distance in parsec by pythag
+            dist = sqrt( r[ 0 ] * r[ 0 ] + r[ 1 ] * r[ 1 ] );
+
+            // Based on the distance from the sun calculate the velocity needed to maintain a circular orbit
+            double v = sqrt( Galaxy::GAMMA * m1 / dist );
+
+            // Calculate a suitable vector perpendicular to r for the velocity of the tracer
+            itor->second.m_Pos.x += ( r[ 1 ] / dist ) * v;
+            itor->second.m_Pos.y += ( -r[ 0 ] / dist ) * v;
+         }
+      };
+
+      parellel_for_each_interval<iter_t>( galaxy_small.m_Stars.begin(), galaxy_small.m_Stars.end(),
+                                          galaxy_small.m_Stars.size() / ( std::thread::hardware_concurrency() / 2 ) + 1,
+                                          calcForOnStarRange );
+
+
+      //for( auto& star : galaxy_small.m_Stars )
       //   star.second.m_Pos += root.calcForce( star.second );
-      {
-         const float &x1( galaxy_small.m_Blackhole.m_Pos.x ), &y1( galaxy_small.m_Blackhole.m_Pos.y );
-         const float &m1( galaxy_small.m_Blackhole.m_Mass );
-         const float &x2( star.second.m_Pos.x ), &y2( star.second.m_Pos.y );
-
-           // Calculate distance from the planet with index idx_main
-         double r[ 2 ], dist;
-         r[ 0 ] = x1 - x2;
-         r[ 1 ] = y1 - y2;
-
-         // distance in parsec
-         dist = sqrt( r[ 0 ] * r[ 0 ] + r[ 1 ] * r[ 1 ] );
-
-         // Based on the distance from the sun calculate the velocity needed to maintain a circular orbit
-         double v = sqrt( Quadrant::GAMMA * m1 / dist );
-
-         // Calculate a suitable vector perpendicular to r for the velocity of the tracer
-         star.second.m_Pos.x += ( r[ 1 ] / dist ) * v;
-         star.second.m_Pos.y += ( -r[ 0 ] / dist ) * v;
-      }
       //galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
 
       //for( auto& star : galaxy_two.m_Stars )

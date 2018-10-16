@@ -48,6 +48,8 @@ public:
 
    void Draw() const;
 
+   static constexpr const float GAMMA = 0.00000005f;
+
    Blackhole m_Blackhole;
    ObjectColors m_Color;
    std::map<glm::vec2, Particle, GlmVec2Comparator> m_Stars;

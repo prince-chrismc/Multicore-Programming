@@ -28,7 +28,7 @@ SOFTWARE.
 #include <random>
 #include <limits>
 
-Blackhole::Blackhole( float x, float y ) : Particle( x, y, 453.485f )
+Blackhole::Blackhole( float x, float y ) : Particle( x, y, 1453.485f )
 {
 }
 
@@ -49,9 +49,9 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
 
    std::random_device rd;
    std::mt19937 gen( rd() );
-   std::lognormal_distribution<long double> numGenPos( 0.0L, 2.5L );
-   std::lognormal_distribution<long double> numGenMass( 0.0L, 20.75L );
-
+   std::lognormal_distribution<long double> numGenPos( 0.0L, 1.8645L );
+   std::lognormal_distribution<long double> numGenMass( 2.0L, 125.873275L );
+   
    for( size_t i = 0; i < particles; i++ )
    {
       float a = static_cast<float>( numGenPos( gen ) * 2.0L * PI );
