@@ -28,7 +28,6 @@ SOFTWARE.
 #include <variant>
 #include <array>
 #include <memory>
-#include <mutex>
 
 class Quadrant
 {
@@ -39,10 +38,10 @@ public:
 
    void Draw() const;
 
-   void insert(const Particle& particle, unsigned long long depth = 0);
+   void insert(const Particle& particle);
 
-   glm::vec2 calcForce( const Particle& particle, unsigned long long depth = 0 );
-   void print() const;
+   glm::vec2 calcForce( const Particle& particle );
+   void print();
 
    static constexpr const float THETA = 0.6f;
    static constexpr const float GAMMA = 0.00000001f;
@@ -50,19 +49,15 @@ public:
 private:
 
    std::variant<int, Particle, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
-   std::array<std::mutex, 4> m_QuadrantLocks;
-
 
    unsigned long long m_TotalParticles;
 
-   std::mutex m_MassLock;
    glm::vec2 m_CenterOfMass;
    float m_Mass;
 
    void updateMassDistribution();
 
-   static constexpr const float THETA = 0.2f;
-   static constexpr const float GAMMA = 0.00000000000000001f;
+
 
    static glm::vec2 calcAcceleration( const Particle& particle_one, const Particle& particle_two );
 
@@ -76,6 +71,7 @@ private:
       District determineChildDistrict( const glm::vec2& pos ) const;
       float getHeight() const;
 
+   private:
       District m_District;
       float m_MinX;
       float m_MinY;
@@ -96,5 +92,5 @@ private:
       GLuint m_Vertices{};
 
       GLsizei m_NumVertices;
-   } /*m_oModel*/;
+   } m_oModel;
 };
