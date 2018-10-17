@@ -54,12 +54,11 @@ elseif(WIN32)
 endif()
 
 # When done tweaking common stuff, configure the components (subprojects).
+set( TBB_BUILD_SHARED OFF )
 
 # NOTE: The order matters! The most independent ones should go first.
 add_subdirectory(CGL)
 add_subdirectory(tbb)
-
-set( TBB_BUILD_SHARED OFF )
 
 FILE(GLOB GC_SOURCE_CODE "Galaxy-Collider/src/*")
 
