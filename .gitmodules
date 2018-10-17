@@ -3,5 +3,5 @@
 	url = https://github.com/prince-chrismc/Computer-Graphics-Libraries.git
 [submodule "Assignments/tbb"]
 	path = Assignments/tbb
-	url = https://github.com/wjakob/tbb.git
+	url = https://github.com/prince-chrismc/tbb.git
 	branch = master
