@@ -31,10 +31,11 @@ SOFTWARE.
 #include "Camera.h"
 #include <iostream>
 #include <thread>
-#include <functional>
 
 #include "Galaxy.h"
 #include "Quadrant.h"
+
+#include "tbb/parallel_for_each.h"
 
 typedef Shader::Linked ShaderLinker;
 
@@ -46,27 +47,6 @@ void operator<<( Quadrant& lhs, const Galaxy& rhs )
 
    for( auto& star : rhs.m_Stars )
       lhs.insert( star.second );
-}
-
-// Inspired from https://stackoverflow.com/a/14244459/8480874 I use this a lot for my parellel computations...
-template < typename Iterator >
-void parellel_for_each_interval( Iterator begin, Iterator end, size_t interval_size, std::function<void( Iterator, Iterator )> operation )
-{
-   auto to = begin;
-
-   while( to != end )
-   {
-      auto from = to;
-
-      auto counter = interval_size;
-      while( counter > 0 && to != end )
-      {
-         ++to;
-         --counter;
-      }
-
-      std::thread( operation, from, to ).detach();
-   }
 }
 
 int main( int argc, char** argv )
@@ -121,36 +101,30 @@ int main( int argc, char** argv )
 
    //root << galaxy_one;
 
-   typedef decltype( galaxy_small.m_Stars.begin() ) iter_t;
-   auto calcForOnStarRange = []( Blackhole blackhole ) {
-      return [ blackhole = blackhole ]( iter_t from, iter_t to ) {
-         for( auto itor = from; itor != to; itor++ )
-         {
-            const float &x1( blackhole.m_Pos.x ), &y1( blackhole.m_Pos.y );
-            const float &m1( blackhole.m_Mass );
+   const auto calcForOnStarRange = []( Blackhole blackhole ) {
+      return [ blackhole = blackhole ]( auto& star )
+      {
+         const float &x1( blackhole.m_Pos.x ), &y1( blackhole.m_Pos.y );
+         const float &m1( blackhole.m_Mass );
 
-            const float &x2( itor->second.m_Pos.x ), &y2( itor->second.m_Pos.y );
+         const float &x2( star.second.m_Pos.x ), &y2( star.second.m_Pos.y );
 
-            // Calculate distance from the planet with index idx_main
-            float r[ 2 ];
-            r[ 0 ] = x1 - x2;
-            r[ 1 ] = y1 - y2;
+         // Calculate distance from the planet with index idx_main
+         float r[ 2 ];
+         r[ 0 ] = x1 - x2;
+         r[ 1 ] = y1 - y2;
 
-            // distance in parsec by pythag
-            const float dist = sqrt( r[ 0 ] * r[ 0 ] + r[ 1 ] * r[ 1 ] );
+         // distance in parsec by pythag
+         const float dist = sqrt( r[ 0 ] * r[ 0 ] + r[ 1 ] * r[ 1 ] );
 
-            // Based on the distance from the sun calculate the velocity needed to maintain a circular orbit
-            const float v = sqrt( Galaxy::GAMMA * m1 / dist );
+         // Based on the distance from the sun calculate the velocity needed to maintain a circular orbit
+         const float v = sqrt( Galaxy::GAMMA * m1 / dist );
 
-            // Calculate a suitable vector perpendicular to r for the velocity of the tracer
-            itor->second.m_Pos.x += ( r[ 1 ] / dist ) * v;
-            itor->second.m_Pos.y += ( -r[ 0 ] / dist ) * v;
-         }
+         // Calculate a suitable vector perpendicular to r for the velocity of the tracer
+         star.second.m_Pos.x += ( r[ 1 ] / dist ) * v;
+         star.second.m_Pos.y += ( -r[ 0 ] / dist ) * v;
       };
    };
-
-   auto forceAroundSmall = calcForOnStarRange( galaxy_small.m_Blackhole );
-   auto forceAroundOne = calcForOnStarRange( galaxy_one.m_Blackhole );
 
    while( !window->ShouldClose() )
    {
@@ -171,22 +145,13 @@ int main( int argc, char** argv )
       galaxy_small.Draw();
       galaxy_one.Draw();
 
-      parellel_for_each_interval<iter_t>( galaxy_small.m_Stars.begin(), galaxy_small.m_Stars.end(),
-                                          galaxy_small.m_Stars.size() / ( std::thread::hardware_concurrency() / 2 ) + 1,
-                                          forceAroundSmall );
+      tbb::parallel_for_each( galaxy_small.m_Stars.begin(), galaxy_small.m_Stars.end(),
+                         calcForOnStarRange( galaxy_small.m_Blackhole )
+      );
 
-
-      parellel_for_each_interval<iter_t>( galaxy_one.m_Stars.begin(), galaxy_one.m_Stars.end(),
-                                          galaxy_one.m_Stars.size() / ( std::thread::hardware_concurrency() / 2 ) + 1,
-                                          forceAroundOne );
-
-      //for( auto& star : galaxy_small.m_Stars )
-      //   star.second.m_Pos += root.calcForce( star.second );
-      //galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
-
-      //for( auto& star : galaxy_two.m_Stars )
-      //   star.second.m_Pos += root.calcForce( star.second );
-
+      tbb::parallel_for_each( galaxy_one.m_Stars.begin(), galaxy_one.m_Stars.end(),
+                         calcForOnStarRange( galaxy_one.m_Blackhole )
+      );
 
       window->NextBuffer();
    }
