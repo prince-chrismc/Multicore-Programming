@@ -37,8 +37,6 @@ SOFTWARE.
 
 #include "tbb/parallel_for_each.h"
 
-typedef Shader::Linked ShaderLinker;
-
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 
 void operator<<( Quadrant& lhs, const Galaxy& rhs )
@@ -81,7 +79,7 @@ int main( int argc, char** argv )
    {
       Shader::Vertex vertexShader( "../Galaxy-Collider/shaders/vertex.shader" );
       Shader::Fragment fragmentShader( "../Galaxy-Collider/shaders/fragment.shader" );
-      ShaderLinker::GetInstance()->Init( &vertexShader, &fragmentShader );
+      Shader::Linked::GetInstance()->Init( &vertexShader, &fragmentShader );
    }
    catch( const std::exception& e )
    {
@@ -93,7 +91,7 @@ int main( int argc, char** argv )
    // Setup global camera
    auto camera = Camera::GetInstance();
    auto window = GlfwWindow::GetInstance();
-   auto shaderProgram = ShaderLinker::GetInstance();
+   auto shaderProgram = Shader::Linked::GetInstance();
 
    Galaxy galaxy_one( ObjectColors::BLUE, 8.0f, -5.0f, 1.5f, 15000 );
    //Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
@@ -146,11 +144,11 @@ int main( int argc, char** argv )
       galaxy_one.Draw();
 
       tbb::parallel_for_each( galaxy_small.m_Stars.begin(), galaxy_small.m_Stars.end(),
-                         calcForOnStarRange( galaxy_small.m_Blackhole )
+                              calcForOnStarRange( galaxy_small.m_Blackhole )
       );
 
       tbb::parallel_for_each( galaxy_one.m_Stars.begin(), galaxy_one.m_Stars.end(),
-                         calcForOnStarRange( galaxy_one.m_Blackhole )
+                              calcForOnStarRange( galaxy_one.m_Blackhole )
       );
 
       window->NextBuffer();
