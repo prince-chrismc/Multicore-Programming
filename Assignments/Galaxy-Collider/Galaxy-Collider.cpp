@@ -30,6 +30,8 @@ SOFTWARE.
 #include "Shaders.h"
 #include "Camera.h"
 #include <iostream>
+#include <thread>
+#include <functional>
 
 #include "Galaxy.h"
 #include "Quadrant.h"
@@ -130,15 +132,15 @@ int main( int argc, char** argv )
             const float &x2( itor->second.m_Pos.x ), &y2( itor->second.m_Pos.y );
 
             // Calculate distance from the planet with index idx_main
-            double r[ 2 ], dist;
+            float r[ 2 ];
             r[ 0 ] = x1 - x2;
             r[ 1 ] = y1 - y2;
 
             // distance in parsec by pythag
-            dist = sqrt( r[ 0 ] * r[ 0 ] + r[ 1 ] * r[ 1 ] );
+            const float dist = sqrt( r[ 0 ] * r[ 0 ] + r[ 1 ] * r[ 1 ] );
 
             // Based on the distance from the sun calculate the velocity needed to maintain a circular orbit
-            double v = sqrt( Galaxy::GAMMA * m1 / dist );
+            const float v = sqrt( Galaxy::GAMMA * m1 / dist );
 
             // Calculate a suitable vector perpendicular to r for the velocity of the tracer
             itor->second.m_Pos.x += ( r[ 1 ] / dist ) * v;
