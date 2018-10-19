@@ -37,6 +37,7 @@ SOFTWARE.
 #include "Quadrant.h"
 
 #include "tbb/parallel_for_each.h"
+#include <tbb/pipeline.h>
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 
@@ -94,10 +95,7 @@ int main( int argc, char** argv )
    auto shaderProgram = Shader::Linked::GetInstance();
 
    Galaxy galaxy_one( ObjectColors::BLUE, 8.0f, -5.0f, 1.5f, 15000 );
-   //Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
    Galaxy galaxy_small( ObjectColors::GREEN, -5.5f, 8.1f, 2.125f, 25000 );
-
-   //root << galaxy_one;
 
    const auto calcForOnStarRange = []( Blackhole blackhole ) {
       return [ blackhole = blackhole ]( std::pair<const glm::vec2, Particle>& star )
@@ -139,22 +137,37 @@ int main( int argc, char** argv )
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
-      // Draw Loop
-      galaxy_small.Draw();
-      galaxy_one.Draw();
 
-      tbb::parallel_for_each( galaxy_small.m_Stars.begin(), galaxy_small.m_Stars.end(),
-                              calcForOnStarRange( galaxy_small.m_Blackhole )
-      );
+      size_t galaxyCounter = 2;
 
-      tbb::parallel_for_each( galaxy_one.m_Stars.begin(), galaxy_one.m_Stars.end(),
-                              calcForOnStarRange( galaxy_one.m_Blackhole )
-      );
+      tbb::parallel_pipeline( 2, tbb::make_filter<void, Galaxy*>( tbb::filter::mode::serial_in_order,
+                              [ &galaxyCounter, &galaxy_one, &galaxy_small ]( tbb::flow_control& fc )->Galaxy*
+                              {
+                                 switch( --galaxyCounter )
+                                 {
+                                 case 1:
+                                    return &galaxy_one;
+                                 case 0:
+                                    return &galaxy_small;
+                                 default:
+                                    fc.stop();
+                                    break;
+                                 }
+                                 return nullptr;
+                              } ) &
+                              tbb::make_filter<Galaxy*, Galaxy*>( tbb::filter::mode::parallel, []( Galaxy* galaxy ) {
+                                 galaxy->Draw();
+                                 return galaxy;
+                              } ) &
+                                 tbb::make_filter<Galaxy*, void>( tbb::filter::mode::parallel, [ &calcForOnStarRange ]( Galaxy* galaxy ) {
+                                    tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), calcForOnStarRange( galaxy->m_Blackhole ) );
+                              } )
+                           );
 
       window->NextBuffer();
 
       frameCounter++;
-      auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start);
+      auto elapsed = std::chrono::duration_cast<std::chrono::seconds>( std::chrono::high_resolution_clock::now() - start );
 
       if( elapsed.count() > 5.0 )
       {
