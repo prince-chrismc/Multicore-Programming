@@ -41,10 +41,10 @@ void key_callback( GLFWwindow* window, int key, int scancode, int action, int mo
 
 void operator<<( Quadrant& lhs, const Galaxy& rhs )
 {
-   lhs.insert( rhs.m_Blackhole );
+   //lhs.insert( rhs.m_Blackhole );
 
-   for( auto& star : rhs.m_Stars )
-      lhs.insert( star.second );
+   //for( auto& star : rhs.m_Stars )
+   //   lhs.insert( star.second );
 }
 
 int main( int argc, char** argv )
@@ -99,7 +99,7 @@ int main( int argc, char** argv )
    //root << galaxy_one;
 
    const auto calcForOnStarRange = []( Blackhole blackhole ) {
-      return [ blackhole = blackhole ]( auto& star )
+      return [ blackhole = blackhole ]( std::pair<const glm::vec2, Particle>& star )
       {
          const float &x1( blackhole.m_Pos.x ), &y1( blackhole.m_Pos.y );
          const long double &m1( blackhole.m_Mass );
