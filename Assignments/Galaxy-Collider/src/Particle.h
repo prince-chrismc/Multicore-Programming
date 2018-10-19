@@ -32,12 +32,18 @@ SOFTWARE.
 class Particle
 {
 public:
-   Particle( float x, float  y, float m ) : m_Pos( x, y ), m_Mass( m ) {}
+   Particle( float x, float  y, long double m ) : m_Pos( x, y ), m_Mass( m ) {}
+   Particle( const Particle& ) = default;
+   Particle( const Particle&& ) = delete;
+   virtual ~Particle() = default;
+
+   void operator=( const Particle& ) = delete;
+   void operator=( const Particle&& ) = delete;
 
    virtual void Draw() const;
 
    glm::vec2 m_Pos;
-   float m_Mass;
+   const long double m_Mass;
 
 private:
    class Model;
@@ -46,7 +52,12 @@ private:
 class Particle::Model final
 {
 public:
+   Model( const Model& ) = delete;
+   Model( const Model&& ) = delete;
    ~Model();
+
+   void operator=( const Model& ) = delete;
+   void operator=( const Model&& ) = delete;
 
    static const Model& GetInstance();
 

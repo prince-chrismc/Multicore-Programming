@@ -103,7 +103,7 @@ int main( int argc, char** argv )
       return [ blackhole = blackhole ]( auto& star )
       {
          const float &x1( blackhole.m_Pos.x ), &y1( blackhole.m_Pos.y );
-         const float &m1( blackhole.m_Mass );
+         const long double &m1( blackhole.m_Mass );
 
          const float &x2( star.second.m_Pos.x ), &y2( star.second.m_Pos.y );
 

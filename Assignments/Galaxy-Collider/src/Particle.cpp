@@ -25,7 +25,6 @@ SOFTWARE.
 #include "Particle.h"
 #include "Linked.h"
 #include <vector>
-#include "Quadrant.h"
 
 std::once_flag Particle::Model::s_Flag;
 std::unique_ptr<Particle::Model> Particle::Model::s_Instance;
@@ -59,7 +58,7 @@ Particle::Model::Model()
 
    glBindVertexArray( 0 );
 
-   m_NumVertices = (GLsizei)vertices.size();
+   m_NumVertices = static_cast<GLsizei>(vertices.size());
 }
 
 Particle::Model::~Model()
