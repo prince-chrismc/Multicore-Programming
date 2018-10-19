@@ -31,6 +31,7 @@ SOFTWARE.
 #include "Camera.h"
 #include <iostream>
 #include <thread>
+#include <chrono>
 
 #include "Galaxy.h"
 #include "Quadrant.h"
@@ -123,6 +124,10 @@ int main( int argc, char** argv )
       };
    };
 
+
+   size_t frameCounter = 0;
+   auto start = std::chrono::high_resolution_clock::now();
+
    while( !window->ShouldClose() )
    {
       window->TriggerCallbacks();
@@ -134,11 +139,7 @@ int main( int argc, char** argv )
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
-      //Quadrant root( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
-      //root << galaxy_small;
-
       // Draw Loop
-      //root.Draw();
       galaxy_small.Draw();
       galaxy_one.Draw();
 
@@ -151,6 +152,16 @@ int main( int argc, char** argv )
       );
 
       window->NextBuffer();
+
+      frameCounter++;
+      auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start);
+
+      if( elapsed.count() > 5.0 )
+      {
+         std::cout << "FPS: " << frameCounter / elapsed.count() << std::endl;
+         frameCounter = 0;
+         start = std::chrono::high_resolution_clock::now();
+      }
    }
 
    return 0;
