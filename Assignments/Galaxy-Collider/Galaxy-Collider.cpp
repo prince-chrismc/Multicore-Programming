@@ -84,7 +84,6 @@ int main( int argc, char** argv )
    catch( const std::exception& e )
    {
       std::cout << "Shader Setup Failed: " << e.what() << std::endl;
-      getchar();
       return -1;
    }
 

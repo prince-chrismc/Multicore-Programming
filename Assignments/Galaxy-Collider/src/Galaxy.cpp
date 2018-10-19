@@ -27,8 +27,10 @@ SOFTWARE.
 #include <tuple>
 #include <random>
 #include <limits>
+#include "tbb/concurrent_vector.h"
+#include "tbb/parallel_for.h"
 
-Blackhole::Blackhole( float x, float y ) : Particle( x, y, 1453.485f )
+Blackhole::Blackhole( float x, float y ) : Particle( x, y, 1453.485L )
 {
 }
 
@@ -38,9 +40,9 @@ void Blackhole::Draw() const
    Particle::Draw();
 }
 
-bool GlmVec2Comparator::operator()(const glm::vec2& l, const glm::vec2& r) const
+bool GlmVec2Comparator::operator()( const glm::vec2& l, const glm::vec2& r ) const
 {
-   return std::tie(l.x, l.y) < std::tie(r.x, r.y);
+   return std::tie( l.x, l.y ) < std::tie( r.x, r.y );
 }
 
 Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particles ) : m_Blackhole( x, y ), m_Color( col )
@@ -49,20 +51,36 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
 
    std::random_device rd;
    std::mt19937 gen( rd() );
-   std::lognormal_distribution<long double> numGenPos( 0.0L, 1.8645L );
-   std::lognormal_distribution<long double> numGenMass( 2.0L, 125.873275L );
-   
-   for( size_t i = 0; i < particles; i++ )
+   const std::lognormal_distribution<long double> numGenPos( 0.0L, 1.8645L );
+   const std::lognormal_distribution<long double> numGenMass( 2.0L, 125.873275L );
+
+   tbb::concurrent_vector<glm::vec2> positions;
+   const auto PositionGenerator = [ =, &positions, &gen ]( const tbb::blocked_range<size_t>& range )
    {
-      float a = static_cast<float>( numGenPos( gen ) * 2.0L * PI );
-      float r = static_cast<float>( sqrt( numGenPos( gen ) * radius ) );
+      for( size_t i = range.begin(); i < range.end(); i++ )
+      {
+         const auto a = static_cast<float>( numGenPos( gen ) * 2.0L * PI );
+         const auto r = static_cast<float>( sqrt( numGenPos( gen ) * radius ) );
 
-      // in Cartesian coordinates
-      float rel_x = r * cos( a );
-      float rel_y = r * sin( a );
+         // in Cartesian coordinates
+         const float rel_x = r * cos( a );
+         const float rel_y = r * sin( a );
 
-      m_Stars.insert( std::make_pair( glm::vec2{ rel_x + x, rel_y + y }, Particle( rel_x + x, rel_y + y, 0.76f + static_cast<float>( numGenMass( gen ) / std::numeric_limits<float>::max() ) ) ) );
-   }
+
+         // distance in parsec by pythag
+         const float dist = sqrt( rel_x * rel_x + rel_y * rel_y );
+
+         if( dist < radius * 4.8746f )
+            positions.emplace_back( rel_x + x, rel_y + y );
+         else
+            i -= 1;
+      }
+   };
+
+   tbb::parallel_for( tbb::blocked_range<size_t>( 0, particles ), PositionGenerator );
+
+   for( auto pos : positions )
+      m_Stars.insert( std::make_pair( pos, Particle( pos.x, pos.y, 0.76L + numGenMass( gen ) / std::numeric_limits<long double>::max() ) ) );
 }
 
 void Galaxy::Draw() const
