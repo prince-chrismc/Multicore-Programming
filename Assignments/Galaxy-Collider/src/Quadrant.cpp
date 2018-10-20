@@ -29,8 +29,7 @@ SOFTWARE.
 
 Quadrant::Quadrant( District disc, float x_min, float y_min, float x_max, float y_max ) :
    m_TotalParticles( 0 ), m_CenterOfMass( 0.0f ), m_Mass( 0.0L ),
-   m_Space( disc, x_min, y_min, x_max, y_max ),
-   m_oModel( x_min, y_min, x_max, y_max )
+   m_Space( disc, x_min, y_min, x_max, y_max )
 {
 }
 
@@ -40,7 +39,9 @@ void Quadrant::Draw() const
    shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::GREY );
    shaderProgram->SetUniformMat4( "model_matrix", glm::mat4( 1.0f ) );
 
-   m_oModel.Draw();
+   Model model( -2.0f, -2.0f, 2.0f, 2.0f );
+   //Model model( m_Space.m_MinX, m_Space.m_MinY, m_Space.m_MaxX, m_Space.m_MaxY );
+   model.Draw();
 
    if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
       for( auto& quad : *pval ) quad->Draw();
@@ -92,7 +93,7 @@ glm::vec2 Quadrant::calcForce( const Particle& particle )
    {
       float d = m_Space.getHeight();
       float r = sqrt( ( particle.m_Pos.x - m_CenterOfMass.x ) * ( particle.m_Pos.x - m_CenterOfMass.x ) +
-                      ( particle.m_Pos.y - m_CenterOfMass.y ) * ( particle.m_Pos.y - m_CenterOfMass.y ) );
+         ( particle.m_Pos.y - m_CenterOfMass.y ) * ( particle.m_Pos.y - m_CenterOfMass.y ) );
 
       if( d / r < THETA )
       {
