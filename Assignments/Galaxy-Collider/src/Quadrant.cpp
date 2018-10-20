@@ -80,7 +80,7 @@ void Quadrant::insert( const Particle& particle )
    m_TotalParticles++;
 }
 
-glm::vec2 Quadrant::calcForce( const Particle& particle )
+glm::vec2 Quadrant::calcForce( const Particle& particle ) const
 {
    glm::vec2 acc{ 0.0f, 0.0f };
 

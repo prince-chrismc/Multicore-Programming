@@ -40,7 +40,7 @@ public:
 
    void insert(const Particle& particle);
 
-   glm::vec2 calcForce( const Particle& particle );
+   glm::vec2 calcForce( const Particle& particle ) const;
    void print();
 
 private:

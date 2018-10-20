@@ -94,7 +94,6 @@ int main( int argc, char** argv )
    auto window = GlfwWindow::GetInstance();
    auto shaderProgram = Shader::Linked::GetInstance();
 
-   //Galaxy galaxy_one( ObjectColors::BLUE, -5.0f, 5.0f, 7.5f, 10000 );
    Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
    Galaxy galaxy_small( ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 1000 );
 
@@ -144,8 +143,6 @@ int main( int argc, char** argv )
 
       // Draw Loop
       root.Draw();
-
-      //galaxy_one.Draw();
       galaxy_small.Draw();
       galaxy_two.Draw();
 
