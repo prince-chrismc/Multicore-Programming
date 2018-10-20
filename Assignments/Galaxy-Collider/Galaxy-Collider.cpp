@@ -149,15 +149,35 @@ int main( int argc, char** argv )
       galaxy_small.Draw();
       galaxy_two.Draw();
 
-      galaxy_small.m_Blackhole.m_Pos += root.calcForce( galaxy_small.m_Blackhole );
+      //galaxy_small.m_Blackhole.m_Pos += root.calcForce( galaxy_small.m_Blackhole );
 
-      for( auto& star : galaxy_small.m_Stars )
-         star.second.m_Pos += root.calcForce( star.second );
+      //for( auto& star : galaxy_small.m_Stars )
+      //   star.second.m_Pos += root.calcForce( star.second );
 
-      galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
+      //galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
 
-      for( auto& star : galaxy_two.m_Stars )
-         star.second.m_Pos += root.calcForce( star.second );
+      //for( auto& star : galaxy_two.m_Stars )
+      //   star.second.m_Pos += root.calcForce( star.second );
+
+      size_t galaxyCounter = 2;
+      tbb::parallel_pipeline( 2, tbb::make_filter<void, Galaxy*>( tbb::filter::mode::serial_in_order,
+                              [ &galaxyCounter, &galaxy_two, &galaxy_small ]( tbb::flow_control& fc )->Galaxy* {
+                                 switch( --galaxyCounter )
+                                 {
+                                 case 1:
+                                    return &galaxy_two;
+                                 case 0:
+                                    return &galaxy_small;
+                                 default:
+                                    fc.stop();
+                                    break;
+                                 }
+                                 return nullptr;
+                              } ) &
+                              tbb::make_filter<Galaxy*, void>( tbb::filter::mode::parallel, [ &calcForOnStarRange ]( Galaxy* galaxy ) {
+                                 tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), calcForOnStarRange( galaxy->m_Blackhole ) );
+                                                               } )
+                                 );
 
 
       window->NextBuffer();
