@@ -130,15 +130,18 @@ int main( int argc, char** argv )
    {
       window->TriggerCallbacks();
 
+      if( frameCounter % 3 == 0 )
+      {
       // Clear the colorbuffer
-      glClearColor( 0.05f, 0.075f, 0.075f, 1.0f ); // near black teal
-      glClear( GL_COLOR_BUFFER_BIT );
+         glClearColor( 0.05f, 0.075f, 0.075f, 1.0f ); // near black teal
+         glClear( GL_COLOR_BUFFER_BIT );
 
-      shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
-      shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
+         shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
+         shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
-      galaxy_one.Draw();
-      galaxy_small.Draw();
+         galaxy_one.Draw();
+         galaxy_small.Draw();
+      }
 
       size_t galaxyCounter = 2;
       tbb::parallel_pipeline( 2, tbb::make_filter<void, Galaxy*>( tbb::filter::mode::serial_in_order,
@@ -155,18 +158,10 @@ int main( int argc, char** argv )
                                  }
                                  return nullptr;
                               } ) &
-                                 tbb::make_filter<Galaxy*, Galaxy*>( tbb::filter::mode::parallel, [ &calcForOnStarRange ]( Galaxy* galaxy ) {
-                                    tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), calcForOnStarRange( galaxy->m_Blackhole ) );
-                                    return galaxy;
-                              } ) &
-                                 tbb::make_filter<Galaxy*, Galaxy*>( tbb::filter::mode::parallel, [ &calcForOnStarRange ]( Galaxy* galaxy ) {
+                              tbb::make_filter<Galaxy*, void>( tbb::filter::mode::parallel, [ &calcForOnStarRange ]( Galaxy* galaxy ) {
                                  tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), calcForOnStarRange( galaxy->m_Blackhole ) );
-                                 return galaxy;
-                                                                     } ) &
-                                 tbb::make_filter<Galaxy*, void>( tbb::filter::mode::parallel, [ &calcForOnStarRange ]( Galaxy* galaxy ) {
-                                                                     tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), calcForOnStarRange( galaxy->m_Blackhole ) );
-                                                                  } )
-                           );
+                                                               } )
+                                 );
 
       window->NextBuffer();
 
