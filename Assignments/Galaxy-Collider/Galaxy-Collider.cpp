@@ -96,7 +96,7 @@ int main( int argc, char** argv )
    auto shaderProgram = Shader::Linked::GetInstance();
 
    Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
-   Galaxy galaxy_small( ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 1000 );
+   Galaxy galaxy_small( ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 1250 );
 
    const auto calcForOnStarRange = []( Blackhole blackhole ) {
       return [ blackhole = blackhole ]( std::pair<const glm::vec2, Particle>& star )
@@ -139,7 +139,7 @@ int main( int argc, char** argv )
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
-      Quadrant root( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
+      Quadrant root( Quadrant::ROOT, -8.0f, -8.0f, 8.0f, 8.0f );
       root << galaxy_small;
       root << galaxy_two;
 

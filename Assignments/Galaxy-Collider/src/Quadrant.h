@@ -32,7 +32,7 @@ SOFTWARE.
 class Quadrant
 {
 public:
-   enum District { NE, SE, SW, NW };
+   enum District { ROOT = -1, NE, SE, SW, NW };
 
    Quadrant(District disc, float x_min, float y_min, float x_max, float y_max);
 
