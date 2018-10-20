@@ -26,6 +26,7 @@ SOFTWARE.
 #include "Linked.h"
 #include "ObjectColors.h"
 #include <vector>
+#include "tbb/task_group.h"
 
 Quadrant::Quadrant( District disc, float x_min, float y_min, float x_max, float y_max ) :
    m_TotalParticles( 0 ), m_CenterOfMass( 0.0f ), m_Mass( 0.0L ),
@@ -63,12 +64,13 @@ void Quadrant::insert( const Particle& particle )
 
       m_CenterOfMass = glm::vec2{ 0.0f,0.0f };
       m_Mass = 0.0f;
-      updateMassDistribution();
    }
    else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
    {
-      ( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle );
-      updateMassDistribution();
+      if( m_TotalParticles < 150 )
+         ( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle );
+      else
+         std::thread( [ &, this ] {( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle ); } ).detach();
    }
    else
    {
@@ -115,19 +117,26 @@ glm::vec2 Quadrant::calcForce( const Particle& particle ) const
    };
 }
 
-void Quadrant::print()
+void Quadrant::print() const
 {
-   printf( "Center of Mass: { %f, %f }\r\n", m_CenterOfMass.x, m_CenterOfMass.y );
+   printf( "Mass of %f centered at { %f, %f }\r\n", m_Mass, m_CenterOfMass.x, m_CenterOfMass.y );
 }
 
-void Quadrant::updateMassDistribution()
+void Quadrant::calcMassDistribution()
 {
    if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
    {
+      tbb::task_group g;
       for( auto& quad : *pval )
       {
          if( quad->m_TotalParticles == 0 ) continue;
 
+         g.run( [ & ] { quad->calcMassDistribution(); } );
+      }
+      g.wait();
+
+      for( auto& quad : *pval )
+      {
          m_Mass += quad->m_Mass;
          m_CenterOfMass += quad->m_Mass * quad->m_CenterOfMass;
       }

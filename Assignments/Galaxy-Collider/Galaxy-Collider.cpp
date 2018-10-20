@@ -148,6 +148,8 @@ int main( int argc, char** argv )
       galaxy_small.Draw();
       galaxy_two.Draw();
 
+      root.calcMassDistribution();
+
       size_t galaxyCounter = 2;
       tbb::parallel_pipeline( 2, tbb::make_filter<void, Galaxy*>( tbb::filter::mode::serial_in_order,
                               [ &galaxyCounter, &galaxy_two, &galaxy_small ]( tbb::flow_control& fc )->Galaxy*
@@ -180,6 +182,8 @@ int main( int argc, char** argv )
                                                                                                       } )
                                                                         );
 
+
+
       window->NextBuffer();
 
       frameCounter++;
@@ -187,6 +191,7 @@ int main( int argc, char** argv )
 
       if( elapsed.count() > 5.0 )
       {
+         root.print();
          std::cout << "FPS: " << frameCounter / elapsed.count() << std::endl;
          frameCounter = 0;
          start = std::chrono::high_resolution_clock::now();

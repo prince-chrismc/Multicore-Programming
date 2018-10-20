@@ -34,14 +34,15 @@ class Quadrant
 public:
    enum District { ROOT = -1, NE, SE, SW, NW };
 
-   Quadrant(District disc, float x_min, float y_min, float x_max, float y_max);
+   Quadrant( District disc, float x_min, float y_min, float x_max, float y_max );
 
    void Draw() const;
 
-   void insert(const Particle& particle);
+   void insert( const Particle& particle );
 
+   void calcMassDistribution();
    glm::vec2 calcForce( const Particle& particle ) const;
-   void print();
+   void print() const;
 
 private:
 
@@ -52,7 +53,6 @@ private:
    glm::vec2 m_CenterOfMass;
    float m_Mass;
 
-   void updateMassDistribution();
 
    static constexpr const float THETA = 0.6f;
    static constexpr const float GAMMA = 0.00000000000001f;
