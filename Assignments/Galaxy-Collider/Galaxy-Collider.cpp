@@ -37,6 +37,7 @@ SOFTWARE.
 #include "Quadrant.h"
 
 #include "tbb/parallel_for_each.h"
+#include "tbb/parallel_invoke.h"
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 
@@ -138,23 +139,30 @@ int main( int argc, char** argv )
 
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
-
+      GlfwWindow::FreeWindow();
       // Draw Loop
-      galaxy_small.Draw();
-      galaxy_one.Draw();
 
-      tbb::parallel_for_each( galaxy_small.m_Stars.begin(), galaxy_small.m_Stars.end(),
-                              calcForOnStarRange( galaxy_small.m_Blackhole )
-      );
+      tbb::parallel_invoke( [ galaxy_small, galaxy_one ] {
+         GlfwWindow::GetInstance()->SelectWindow();
+         galaxy_small.Draw();
+         galaxy_one.Draw();
+         GlfwWindow::FreeWindow();
+                            },
+                            [ & ] {
+                               tbb::parallel_for_each( galaxy_small.m_Stars.begin(), galaxy_small.m_Stars.end(),
+                                                       calcForOnStarRange( galaxy_small.m_Blackhole )
+                               );
 
-      tbb::parallel_for_each( galaxy_one.m_Stars.begin(), galaxy_one.m_Stars.end(),
-                              calcForOnStarRange( galaxy_one.m_Blackhole )
-      );
+                               tbb::parallel_for_each( galaxy_one.m_Stars.begin(), galaxy_one.m_Stars.end(),
+                                                       calcForOnStarRange( galaxy_one.m_Blackhole )
+                               );
+                            } );
 
+      window->SelectWindow();
       window->NextBuffer();
 
       frameCounter++;
-      auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start);
+      auto elapsed = std::chrono::duration_cast<std::chrono::seconds>( std::chrono::high_resolution_clock::now() - start );
 
       if( elapsed.count() > 5.0 )
       {
