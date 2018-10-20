@@ -30,18 +30,18 @@ SOFTWARE.
 
 Quadrant::Quadrant( District disc, float x_min, float y_min, float x_max, float y_max ) :
    m_TotalParticles( 0 ), m_CenterOfMass( 0.0f ), m_Mass( 0.0L ),
-   m_Space( disc, x_min, y_min, x_max, y_max ),
-   m_oModel( x_min, y_min, x_max, y_max )
+   m_Space( disc, x_min, y_min, x_max, y_max )
 {
 }
 
-void Quadrant::Draw() const
+void Quadrant::Draw()
 {
    auto shaderProgram = Shader::Linked::GetInstance();
    shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::GREY );
    shaderProgram->SetUniformMat4( "model_matrix", glm::mat4( 1.0f ) );
 
-   m_oModel.Draw();
+   m_oModel.emplace( m_Space.m_MinX, m_Space.m_MinY, m_Space.m_MaxX, m_Space.m_MaxY );
+   m_oModel->Draw();
 
    if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
       for( auto& quad : *pval ) quad->Draw();

@@ -28,6 +28,7 @@ SOFTWARE.
 #include <variant>
 #include <array>
 #include <memory>
+#include <optional>
 
 class Quadrant
 {
@@ -36,7 +37,7 @@ public:
 
    Quadrant( District disc, float x_min, float y_min, float x_max, float y_max );
 
-   void Draw() const;
+   void Draw();
 
    void insert( const Particle& particle );
 
@@ -60,24 +61,7 @@ private:
 
    static glm::vec2 calcAcceleration( const Particle& particle_one, const Particle& particle_two );
 
-   class Spacial
-   {
-   public:
-      Spacial( District disc, float x_min, float y_min, float x_max, float y_max );
 
-      bool outsideOfRegion( const Particle& particle ) const;
-      std::array<std::unique_ptr<Quadrant>, 4> makeChildDistricts() const;
-      District determineChildDistrict( const glm::vec2& pos ) const;
-      float getHeight() const;
-
-   private:
-      District m_District;
-      float m_MinX;
-      float m_MinY;
-      float m_MaxX;
-      float m_MaxY;
-      glm::vec2 m_Center;
-   } m_Space;
 
    class Model
    {
@@ -91,5 +75,26 @@ private:
       GLuint m_Vertices{};
 
       GLsizei m_NumVertices;
-   } m_oModel;
+   };
+
+   std::optional<Model> m_oModel;
+
+   class Spacial
+   {
+   public:
+      Spacial( District disc, float x_min, float y_min, float x_max, float y_max );
+
+      bool outsideOfRegion( const Particle& particle ) const;
+      std::array<std::unique_ptr<Quadrant>, 4> makeChildDistricts() const;
+      District determineChildDistrict( const glm::vec2& pos ) const;
+      float getHeight() const;
+
+      District m_District;
+      float m_MinX;
+      float m_MinY;
+      float m_MaxX;
+      float m_MaxY;
+      glm::vec2 m_Center;
+   } m_Space;
+
 };
