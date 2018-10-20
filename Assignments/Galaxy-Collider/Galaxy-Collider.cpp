@@ -101,8 +101,8 @@ int main( int argc, char** argv )
    auto window = GlfwWindow::GetInstance();
    auto shaderProgram = Shader::Linked::GetInstance();
 
-   Galaxy galaxy_one( ObjectColors::BLUE, 8.0f, -5.0f, 1.5f, 15000 );
-   Galaxy galaxy_small( ObjectColors::GREEN, -5.5f, 8.1f, 2.125f, 25000 );
+   Galaxy galaxy_one( ObjectColors::BLUE, 8.0f, -5.0f, 1.5f, 1000 );
+   Galaxy galaxy_small( ObjectColors::GREEN, -5.5f, 8.1f, 2.125f, 2000 );
 
    const auto calcForOnStarRange = []( Blackhole blackhole ) {
       return [ blackhole = blackhole ]( std::pair<const glm::vec2, Particle>& star )
