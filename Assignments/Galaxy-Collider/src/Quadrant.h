@@ -70,6 +70,7 @@ private:
       District determineChildDistrict( const glm::vec2& pos ) const;
       float getHeight() const;
 
+   private:
       District m_District;
       float m_MinX;
       float m_MinY;
@@ -90,5 +91,5 @@ private:
       GLuint m_Vertices{};
 
       GLsizei m_NumVertices;
-   };
+   } m_oModel;
 };

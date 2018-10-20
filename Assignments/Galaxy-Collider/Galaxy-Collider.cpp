@@ -40,11 +40,11 @@ SOFTWARE.
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 
-void operator<<(Quadrant& lhs, Galaxy* rhs)
+void operator<<( Quadrant& lhs, const Galaxy& rhs )
 {
-   lhs.insert( rhs->m_Blackhole );
+   lhs.insert( rhs.m_Blackhole );
 
-   for( auto& star : rhs->m_Stars )
+   for( auto& star : rhs.m_Stars )
       lhs.insert( star.second );
 }
 
@@ -123,6 +123,7 @@ int main( int argc, char** argv )
       };
    };
 
+
    size_t frameCounter = 0;
    auto start = std::chrono::high_resolution_clock::now();
 
@@ -138,6 +139,8 @@ int main( int argc, char** argv )
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
       Quadrant root( Quadrant::NE, -8.0f, -8.0f, 8.0f, 8.0f );
+      root << galaxy_small;
+      root << galaxy_two;
 
       // Draw Loop
       root.Draw();
@@ -145,16 +148,6 @@ int main( int argc, char** argv )
       //galaxy_one.Draw();
       galaxy_small.Draw();
       galaxy_two.Draw();
-
-      //galaxy_small.m_Blackhole.m_Pos += root.calcForce( galaxy_small.m_Blackhole );
-
-      //for( auto& star : galaxy_small.m_Stars )
-      //   star.second.m_Pos += root.calcForce( star.second );
-
-      //galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
-
-      //for( auto& star : galaxy_two.m_Stars )
-      //   star.second.m_Pos += root.calcForce( star.second );
 
       size_t galaxyCounter = 2;
       tbb::parallel_pipeline( 2, tbb::make_filter<void, Galaxy*>( tbb::filter::mode::serial_in_order,
@@ -171,14 +164,20 @@ int main( int argc, char** argv )
                                  }
                                  return nullptr;
                               } ) &
-                              tbb::make_filter<Galaxy*, Galaxy*>( tbb::filter::mode::parallel, [&root]( Galaxy* galaxy ) {
-                                 root << galaxy;
-                                 return galaxy;
-                                                                  } ) &
                               tbb::make_filter<Galaxy*, void>( tbb::filter::mode::parallel, [ &calcForOnStarRange ]( Galaxy* galaxy ) {
                                  tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), calcForOnStarRange( galaxy->m_Blackhole ) );
                                                                } )
                                  );
+
+      galaxy_small.m_Blackhole.m_Pos += root.calcForce( galaxy_small.m_Blackhole );
+
+      for( auto& star : galaxy_small.m_Stars )
+         star.second.m_Pos += root.calcForce( star.second );
+
+      galaxy_two.m_Blackhole.m_Pos += root.calcForce( galaxy_two.m_Blackhole );
+
+      for( auto& star : galaxy_two.m_Stars )
+         star.second.m_Pos += root.calcForce( star.second );
 
 
       window->NextBuffer();
