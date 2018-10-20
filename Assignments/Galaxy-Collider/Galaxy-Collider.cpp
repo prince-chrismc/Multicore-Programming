@@ -95,8 +95,8 @@ int main( int argc, char** argv )
    auto shaderProgram = Shader::Linked::GetInstance();
 
    //Galaxy galaxy_one( ObjectColors::BLUE, -5.0f, 5.0f, 7.5f, 10000 );
-   Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
-   Galaxy galaxy_small( ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 1000 );
+   Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 4000 );
+   Galaxy galaxy_small( ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 3000 );
 
    const auto calcForOnStarRange = []( Blackhole blackhole ) {
       return [ blackhole = blackhole ]( std::pair<const glm::vec2, Particle>& star )
