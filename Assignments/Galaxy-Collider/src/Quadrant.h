@@ -25,47 +25,38 @@ SOFTWARE.
 #pragma once
 
 #include "Particle.h"
-#include "tbb/queuing_mutex.h"
+#include <variant>
 #include <array>
 #include <memory>
 
 class Quadrant
 {
 public:
-   enum District { ROOT = -1, NE, SE, SW, NW };
+   enum District { NE, SE, SW, NW };
 
-   Quadrant( float x_min, float y_min, float x_max, float y_max );
-   Quadrant( Quadrant* parent, District disc, float x_min, float y_min, float x_max, float y_max );
+   Quadrant(District disc, float x_min, float y_min, float x_max, float y_max);
 
    void Draw() const;
 
-   void insert( Particle* particle );
+   void insert(const Particle& particle);
 
-   glm::vec2 calcForce( Particle* particle ) const;
-
-   static constexpr const float THETA = 0.6f;
-   static constexpr const float GAMMA = 0.00000001f;
-
+   glm::vec2 calcForce( const Particle& particle );
+   void print();
 
 private:
-   Quadrant* m_Parent;
 
-   class Contains
-   {
-   public:
-      Contains() : m_Type( NOTHING ) {}
-
-      enum Type { NOTHING, PARTICLE, QUADRANT } m_Type;
-      std::array<std::unique_ptr<Quadrant>, 4> m_Quadrants;
-      Particle* m_Particle;
-   } m_Contains;
-   tbb::queuing_mutex m_ContainerMutex;
+   std::variant<int, Particle, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
 
    unsigned long long m_TotalParticles;
-   glm::vec2 m_CenterOfMass;
-   long double m_Mass;
 
-   void calcMassDistribution();
+   glm::vec2 m_CenterOfMass;
+   float m_Mass;
+
+   void updateMassDistribution();
+
+   static constexpr const float THETA = 0.6f;
+   static constexpr const float GAMMA = 0.00000000000001f;
+
 
    static glm::vec2 calcAcceleration( const Particle& particle_one, const Particle& particle_two );
 
@@ -75,10 +66,11 @@ private:
       Spacial( District disc, float x_min, float y_min, float x_max, float y_max );
 
       bool outsideOfRegion( const Particle& particle ) const;
-      std::array<std::unique_ptr<Quadrant>, 4> makeChildDistricts( Quadrant* quad ) const;
+      std::array<std::unique_ptr<Quadrant>, 4> makeChildDistricts() const;
       District determineChildDistrict( const glm::vec2& pos ) const;
       float getHeight() const;
 
+   private:
       District m_District;
       float m_MinX;
       float m_MinY;
@@ -91,12 +83,7 @@ private:
    {
    public:
       Model( float x_min, float y_min, float x_max, float y_max );
-      Model( const Model& ) = delete;
-      Model( const Model&& ) = delete;
       ~Model();
-
-      void operator=( const Model& ) = delete;
-      void operator=( const Model&& ) = delete;
 
       void Draw() const;
    private:
@@ -104,5 +91,5 @@ private:
       GLuint m_Vertices{};
 
       GLsizei m_NumVertices;
-   };
+   } m_oModel;
 };

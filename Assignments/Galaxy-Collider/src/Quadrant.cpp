@@ -27,15 +27,10 @@ SOFTWARE.
 #include "ObjectColors.h"
 #include <vector>
 
-Quadrant::Quadrant( float x_min, float y_min, float x_max, float y_max ) :
-   Quadrant( nullptr, ROOT, x_min, y_min, x_max, y_max )
-{
-}
-
-Quadrant::Quadrant( Quadrant* parent, District disc, float x_min, float y_min, float x_max, float y_max ) :
-   m_Parent( parent ),
+Quadrant::Quadrant( District disc, float x_min, float y_min, float x_max, float y_max ) :
    m_TotalParticles( 0 ), m_CenterOfMass( 0.0f ), m_Mass( 0.0L ),
-   m_Space( disc, x_min, y_min, x_max, y_max )
+   m_Space( disc, x_min, y_min, x_max, y_max ),
+   m_oModel( x_min, y_min, x_max, y_max )
 {
 }
 
@@ -45,99 +40,94 @@ void Quadrant::Draw() const
    shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::GREY );
    shaderProgram->SetUniformMat4( "model_matrix", glm::mat4( 1.0f ) );
 
-   Model( m_Space.m_MinX, m_Space.m_MinY, m_Space.m_MaxX, m_Space.m_MaxY ).Draw();
+   m_oModel.Draw();
 
-   switch( m_Contains.m_Type )
-   {
-   case Contains::PARTICLE:
-      //m_Contains.m_Particle->Draw();
-      break;
-   case Contains::QUADRANT:
-      for( auto& quad : m_Contains.m_Quadrants ) quad->Draw();
-      break;
-   default:
-      break;
-   }
+   if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
+      for( auto& quad : *pval ) quad->Draw();
 }
 
-void Quadrant::insert( Particle* particle )
+void Quadrant::insert( const Particle& particle )
 {
-   if( m_Space.outsideOfRegion( *particle ) )
-   {
-      if( m_Space.m_District == ROOT )
-         return; // Don't even bother =)
+   if( m_Space.outsideOfRegion( particle ) )
+      return; // Don't even bother =)
 
-      return m_Parent->insert( particle );
+   if( auto pval = std::get_if<Particle>( &m_Contains ) )
+   {
+      Particle existingParticles = *pval;
+
+      std::array<std::unique_ptr<Quadrant>, 4> oChildQuads = m_Space.makeChildDistricts();
+      oChildQuads[ m_Space.determineChildDistrict( existingParticles.m_Pos ) ]->insert( existingParticles );
+      oChildQuads[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle );
+
+      m_Contains.emplace<std::array<std::unique_ptr<Quadrant>, 4>>( std::move( oChildQuads ) );
+
+      m_CenterOfMass = glm::vec2{ 0.0f,0.0f };
+      m_Mass = 0.0f;
+      updateMassDistribution();
    }
-
-   tbb::queuing_mutex::scoped_lock( m_ContainerMutex );
-   switch( m_Contains.m_Type )
+   else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
    {
-   case Contains::NOTHING:
-      m_CenterOfMass = particle->m_Pos;
-      m_Mass = particle->m_Mass;
-      m_Contains.m_Particle = particle;
-      m_Contains.m_Type = Contains::PARTICLE;
-      break;
-
-   case Contains::PARTICLE:
-      m_Contains.m_Quadrants = m_Space.makeChildDistricts( this );
-      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( m_Contains.m_Particle->m_Pos ) ]->insert( m_Contains.m_Particle );
-      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
-      m_Contains.m_Type = Contains::QUADRANT;
-      break;
-
-   case Contains::QUADRANT:
-      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
-      break;
-
-   default:
-      break;
+      ( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle );
+      updateMassDistribution();
+   }
+   else
+   {
+      m_Contains.emplace<Particle>( particle );
+      m_CenterOfMass = particle.m_Pos;
+      m_Mass = particle.m_Mass;
    }
 
    m_TotalParticles++;
 }
 
-glm::vec2 Quadrant::calcForce( Particle* particle ) const
+glm::vec2 Quadrant::calcForce( const Particle& particle )
 {
    glm::vec2 acc{ 0.0f, 0.0f };
 
-   switch( m_Contains.m_Type )
+   if( auto pval = std::get_if<Particle>( &m_Contains ) )
    {
-   case Contains::PARTICLE:
-      acc = calcAcceleration( *particle, *m_Contains.m_Particle );
-      break;
-
-   case Contains::QUADRANT:
+      acc = calcAcceleration( particle, *pval );
+   }
+   else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
    {
       float d = m_Space.getHeight();
-      float r = sqrt( ( particle->m_Pos.x - m_CenterOfMass.x ) * ( particle->m_Pos.x - m_CenterOfMass.x ) +
-         ( particle->m_Pos.y - m_CenterOfMass.y ) * ( particle->m_Pos.y - m_CenterOfMass.y ) );
+      float r = sqrt( ( particle.m_Pos.x - m_CenterOfMass.x ) * ( particle.m_Pos.x - m_CenterOfMass.x ) +
+                      ( particle.m_Pos.y - m_CenterOfMass.y ) * ( particle.m_Pos.y - m_CenterOfMass.y ) );
 
       if( d / r < THETA )
       {
          const float k = GAMMA * m_Mass / ( r*r*r );
-         acc.x = k * ( m_CenterOfMass.x - particle->m_Pos.x );
-         acc.y = k * ( m_CenterOfMass.y - particle->m_Pos.y );
+         acc.x = k * ( m_CenterOfMass.x - particle.m_Pos.x );
+         acc.y = k * ( m_CenterOfMass.y - particle.m_Pos.y );
       }
       else
       {
-         for( auto& quad : m_Contains.m_Quadrants )
+         for( auto& quad : *pval )
             acc += quad->calcForce( particle );
       }
-   }
-   break;
-
-   default:
-      break;
    }
 
    return acc;
 }
 
-void Quadrant::calcMassDistribution()
+void Quadrant::print()
 {
-   // TO DO : Didn't work orignally...
+   printf( "Center of Mass: { %f, %f }\r\n", m_CenterOfMass.x, m_CenterOfMass.y );
+}
+
+void Quadrant::updateMassDistribution()
+{
+   if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
+   {
+      for( auto& quad : *pval )
+      {
+         if( quad->m_TotalParticles == 0 ) continue;
+
+         m_Mass += quad->m_Mass;
+         m_CenterOfMass += quad->m_Mass * quad->m_CenterOfMass;
+      }
+      m_CenterOfMass /= m_Mass;
+   }
 }
 
 glm::vec2 Quadrant::calcAcceleration( const Particle& particle_one, const Particle& particle_two )
@@ -147,10 +137,10 @@ glm::vec2 Quadrant::calcAcceleration( const Particle& particle_one, const Partic
    if( &particle_one == &particle_two )
       return acc;
 
-   // assign references to the variables in a readable form
+    // assign references to the variables in a readable form
    const float &x1( particle_one.m_Pos.x ), &y1( particle_one.m_Pos.y );
    const float &x2( particle_two.m_Pos.x ), &y2( particle_two.m_Pos.y );
-   const long double &m2( particle_two.m_Mass );
+   const float &m2( particle_two.m_Mass );
 
    const float r = sqrt( ( x1 - x2 ) * ( x1 - x2 ) + ( y1 - y2 ) * ( y1 - y2 ) );
 
@@ -201,14 +191,14 @@ bool Quadrant::Spacial::outsideOfRegion( const Particle& particle ) const
    );
 }
 
-std::array<std::unique_ptr<Quadrant>, 4> Quadrant::Spacial::makeChildDistricts( Quadrant* quad ) const
+std::array<std::unique_ptr<Quadrant>, 4> Quadrant::Spacial::makeChildDistricts() const
 {
    return
    {
-         std::make_unique<Quadrant>( quad, NE, m_Center.x, m_Center.y, m_MaxX, m_MaxY ),
-         std::make_unique<Quadrant>( quad, SE, m_Center.x, m_MinY, m_MaxX, m_Center.y ),
-         std::make_unique<Quadrant>( quad, SW, m_MinX, m_MinY, m_Center.x, m_Center.y ),
-         std::make_unique<Quadrant>( quad, NW, m_MinX, m_Center.y, m_Center.x, m_MaxY )
+         std::make_unique<Quadrant>( NE, m_Center.x, m_Center.y, m_MaxX, m_MaxY ),
+         std::make_unique<Quadrant>( SE, m_Center.x, m_MinY, m_MaxX, m_Center.y ),
+         std::make_unique<Quadrant>( SW, m_MinX, m_MinY, m_Center.x, m_Center.y ),
+         std::make_unique<Quadrant>( NW, m_MinX, m_Center.y, m_Center.x, m_MaxY )
    };
 }
 
