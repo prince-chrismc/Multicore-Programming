@@ -39,7 +39,7 @@ public:
 
    void Draw() const;
 
-   void insert( Particle* particle, size_t depth = 1 );
+   void insert( Particle* particle );
 
    glm::vec2 calcForce( Particle* particle ) const;
 
