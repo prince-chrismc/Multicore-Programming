@@ -67,10 +67,7 @@ void Quadrant::insert( const Particle& particle )
    }
    else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
    {
-      if( m_TotalParticles < 150 )
          ( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle );
-      else
-         std::thread( [ &, this ] {( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle ); } ).detach();
    }
    else
    {
