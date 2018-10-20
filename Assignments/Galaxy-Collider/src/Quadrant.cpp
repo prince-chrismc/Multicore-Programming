@@ -26,7 +26,6 @@ SOFTWARE.
 #include "Linked.h"
 #include "ObjectColors.h"
 #include <vector>
-#include "Singleton.h"
 
 Quadrant::Quadrant( float x_min, float y_min, float x_max, float y_max ) :
    Quadrant( nullptr, ROOT, x_min, y_min, x_max, y_max )
@@ -36,8 +35,7 @@ Quadrant::Quadrant( float x_min, float y_min, float x_max, float y_max ) :
 Quadrant::Quadrant( Quadrant* parent, District disc, float x_min, float y_min, float x_max, float y_max ) :
    m_Parent( parent ),
    m_TotalParticles( 0 ), m_CenterOfMass( 0.0f ), m_Mass( 0.0L ),
-   m_Space( disc, x_min, y_min, x_max, y_max ),
-   m_oModel( x_min, y_min, x_max, y_max )
+   m_Space( disc, x_min, y_min, x_max, y_max )
 {
 }
 
@@ -47,7 +45,7 @@ void Quadrant::Draw() const
    shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::GREY );
    shaderProgram->SetUniformMat4( "model_matrix", glm::mat4( 1.0f ) );
 
-   m_oModel.Draw();
+   Model( m_Space.m_MinX, m_Space.m_MinY, m_Space.m_MaxX, m_Space.m_MaxY ).Draw();
 
    switch( m_Contains.m_Type )
    {
@@ -234,7 +232,6 @@ float Quadrant::Spacial::getHeight() const
 //
 Quadrant::Model::Model( float x_min, float y_min, float x_max, float y_max )
 {
-   GlfwWindow::GetInstance()->SelectWindow();
    const GLuint PositonIndex = Shader::Linked::GetInstance()->GetAttributeLocation( "position" );
 
    std::vector<glm::vec3> vertices(
@@ -258,7 +255,6 @@ Quadrant::Model::Model( float x_min, float y_min, float x_max, float y_max )
 
    glBindVertexArray( 0 );
 
-   GlfwWindow::FreeWindow();
    m_NumVertices = (GLsizei)vertices.size();
 }
 

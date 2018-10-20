@@ -45,12 +45,15 @@ void operator<<( Quadrant& lhs, Galaxy& rhs )
 {
    lhs.insert( &rhs.m_Blackhole );
 
-   const auto ParticleMover = [&lhs]( std::pair<const glm::vec2, Particle>& star )
-   {
-      lhs.insert( &star.second );
-   };
+   //const auto ParticleMover = [&lhs]( std::pair<const glm::vec2, Particle>& star )
+   //{
+   //   lhs.insert( &star.second );
+   //};
 
-   tbb::parallel_for_each( rhs.m_Stars.begin(), rhs.m_Stars.end(), ParticleMover );
+   //tbb::parallel_for_each( rhs.m_Stars.begin(), rhs.m_Stars.end(), ParticleMover );
+
+   for( auto star : rhs.m_Stars )
+      lhs.insert( &star.second );
 }
 
 int main( int argc, char** argv )

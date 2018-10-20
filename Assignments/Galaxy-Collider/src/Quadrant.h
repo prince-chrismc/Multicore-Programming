@@ -80,7 +80,6 @@ private:
       float getHeight() const;
 
       District m_District;
-   private:
       float m_MinX;
       float m_MinY;
       float m_MaxX;
@@ -105,5 +104,5 @@ private:
       GLuint m_Vertices{};
 
       GLsizei m_NumVertices;
-   } m_oModel;
+   };
 };
