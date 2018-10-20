@@ -174,8 +174,10 @@ int main( int argc, char** argv )
                                                                      return galaxy;
                                                                      } ) &
                                                                      tbb::make_filter<Galaxy*, void>( tbb::filter::mode::parallel, [ &root ]( Galaxy* galaxy ) {
-                                                                        for( auto& star : galaxy->m_Stars )
-                                                                           star.second.m_Pos += root.calcForce( star.second );
+                                                                        tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), [ & ]( std::pair<const glm::vec2, Particle>& star )
+                                                                                                {
+                                                                                                   star.second.m_Pos += root.calcForce( star.second );
+                                                                                                } );
                                                                                                       } )
                                                                         );
 
