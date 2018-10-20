@@ -26,6 +26,7 @@ SOFTWARE.
 #include "Linked.h"
 #include "ObjectColors.h"
 #include <vector>
+#include "tbb/parallel_invoke.h"
 
 Quadrant::Quadrant( float x_min, float y_min, float x_max, float y_max ) :
    Quadrant( nullptr, ROOT, x_min, y_min, x_max, y_max )
@@ -60,7 +61,7 @@ void Quadrant::Draw() const
    }
 }
 
-void Quadrant::insert( Particle* particle )
+void Quadrant::insert( Particle* particle, size_t depth /* = 1 */ )
 {
    if( m_Space.outsideOfRegion( *particle ) )
    {
@@ -82,13 +83,32 @@ void Quadrant::insert( Particle* particle )
 
    case Contains::PARTICLE:
       m_Contains.m_Quadrants = m_Space.makeChildDistricts( this );
-      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( m_Contains.m_Particle->m_Pos ) ]->insert( m_Contains.m_Particle );
-      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
+      if( depth <= 15 )
+      {
+         m_Contains.m_Quadrants[ m_Space.determineChildDistrict( m_Contains.m_Particle->m_Pos ) ]->insert( m_Contains.m_Particle, depth++ );
+         m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle, depth++ );
+      }
+      else
+      {
+         std::thread( [ this, particle, &depth ]()
+                      {
+                         m_Contains.m_Quadrants[ m_Space.determineChildDistrict( m_Contains.m_Particle->m_Pos ) ]->insert( m_Contains.m_Particle, depth++ );
+                         m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle, depth++ );
+                      }
+         );
+      }
       m_Contains.m_Type = Contains::QUADRANT;
       break;
 
    case Contains::QUADRANT:
-      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
+      if( depth <= 15 )
+         m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle, depth++ );
+      else
+      std::thread( [ this, particle, &depth ]()
+                   {
+                      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle, depth++ );
+                   }
+      );
       break;
 
    default:
