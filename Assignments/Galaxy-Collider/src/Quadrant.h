@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include "Particle.h"
+#include "tbb/queuing_mutex.h"
 #include <array>
 #include <memory>
 
@@ -58,12 +59,13 @@ private:
       std::array<std::unique_ptr<Quadrant>, 4> m_Quadrants;
       std::unique_ptr<Particle> m_Particle;
    } m_Contains;
+   tbb::queuing_mutex m_ContainerMutex;
 
    unsigned long long m_TotalParticles;
    glm::vec2 m_CenterOfMass;
    long double m_Mass;
 
-   void updateMassDistribution();
+   void calcMassDistribution();
 
    static glm::vec2 calcAcceleration( const Particle& particle_one, const Particle& particle_two );
 
@@ -73,7 +75,7 @@ private:
       Spacial( District disc, float x_min, float y_min, float x_max, float y_max );
 
       bool outsideOfRegion( const Particle& particle ) const;
-      std::array<std::unique_ptr<Quadrant>, 4> makeChildDistricts() const;
+      std::array<std::unique_ptr<Quadrant>, 4> makeChildDistricts( Quadrant* quad ) const;
       District determineChildDistrict( const glm::vec2& pos ) const;
       float getHeight() const;
 

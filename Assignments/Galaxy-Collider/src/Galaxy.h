@@ -27,30 +27,31 @@ SOFTWARE.
 #include "Particle.h"
 #include "ObjectColors.h"
 #include <map>
+#include <memory>
 
 class Blackhole final : public Particle
 {
 public:
-   Blackhole(float x, float y);
+   Blackhole( float x, float y );
 
    void Draw() const override;
 };
 
 struct GlmVec2Comparator
 {
-   bool operator()(const glm::vec2& l, const glm::vec2& r) const;
+   bool operator()( const glm::vec2& l, const glm::vec2& r ) const;
 };
 
 class Galaxy
 {
 public:
-   Galaxy(ObjectColors col, float x, float y, float radius, size_t particles);
+   Galaxy( ObjectColors col, float x, float y, float radius, size_t particles );
 
    void Draw() const;
 
    static constexpr const float GAMMA = 0.0000005f;
 
-   Blackhole m_Blackhole;
+   std::unique_ptr<Blackhole> m_Blackhole;
    ObjectColors m_Color;
-   std::map<glm::vec2, Particle, GlmVec2Comparator> m_Stars;
+   std::map<glm::vec2, std::unique_ptr<Particle>, GlmVec2Comparator> m_Stars;
 };

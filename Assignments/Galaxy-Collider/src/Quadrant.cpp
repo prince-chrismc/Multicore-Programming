@@ -71,6 +71,7 @@ void Quadrant::insert( std::unique_ptr<Particle> particle )
       return m_Parent->insert( std::move( particle ) );
    }
 
+   tbb::queuing_mutex::scoped_lock( m_ContainerMutex );
    switch( m_Contains.m_Type )
    {
    case Contains::NOTHING:
@@ -80,19 +81,15 @@ void Quadrant::insert( std::unique_ptr<Particle> particle )
       break;
 
    case Contains::PARTICLE:
-      m_Contains.m_Quadrants = m_Space.makeChildDistricts();
+      m_Contains.m_Quadrants = m_Space.makeChildDistricts( this );
       m_Contains.m_Quadrants[ m_Space.determineChildDistrict( m_Contains.m_Particle->m_Pos ) ]->insert( std::move( m_Contains.m_Particle ) );
       m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( std::move( particle ) );
-
-      m_CenterOfMass = glm::vec2{ 0.0f,0.0f };
-      m_Mass = 0.0f;
-      updateMassDistribution();
       break;
 
    case Contains::QUADRANT:
       m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( std::move( particle ) );
-      updateMassDistribution();
       break;
+
    default:
       break;
    }
@@ -114,7 +111,7 @@ glm::vec2 Quadrant::calcForce( Particle* particle ) const
    {
       float d = m_Space.getHeight();
       float r = sqrt( ( particle->m_Pos.x - m_CenterOfMass.x ) * ( particle->m_Pos.x - m_CenterOfMass.x ) +
-                      ( particle->m_Pos.y - m_CenterOfMass.y ) * ( particle->m_Pos.y - m_CenterOfMass.y ) );
+         ( particle->m_Pos.y - m_CenterOfMass.y ) * ( particle->m_Pos.y - m_CenterOfMass.y ) );
 
       if( d / r < THETA )
       {
@@ -137,7 +134,7 @@ glm::vec2 Quadrant::calcForce( Particle* particle ) const
    return acc;
 }
 
-void Quadrant::updateMassDistribution()
+void Quadrant::calcMassDistribution()
 {
    // TO DO : Didn't work orignally...
 }
@@ -203,14 +200,14 @@ bool Quadrant::Spacial::outsideOfRegion( const Particle& particle ) const
    );
 }
 
-std::array<std::unique_ptr<Quadrant>, 4> Quadrant::Spacial::makeChildDistricts() const
+std::array<std::unique_ptr<Quadrant>, 4> Quadrant::Spacial::makeChildDistricts( Quadrant* quad ) const
 {
    return
    {
-         //std::make_unique<Quadrant>( NE, m_Center.x, m_Center.y, m_MaxX, m_MaxY ),
-         //std::make_unique<Quadrant>( SE, m_Center.x, m_MinY, m_MaxX, m_Center.y ),
-         //std::make_unique<Quadrant>( SW, m_MinX, m_MinY, m_Center.x, m_Center.y ),
-         //std::make_unique<Quadrant>( NW, m_MinX, m_Center.y, m_Center.x, m_MaxY )
+         std::make_unique<Quadrant>( quad, NE, m_Center.x, m_Center.y, m_MaxX, m_MaxY ),
+         std::make_unique<Quadrant>( quad, SE, m_Center.x, m_MinY, m_MaxX, m_Center.y ),
+         std::make_unique<Quadrant>( quad, SW, m_MinX, m_MinY, m_Center.x, m_Center.y ),
+         std::make_unique<Quadrant>( quad, NW, m_MinX, m_Center.y, m_Center.x, m_MaxY )
    };
 }
 

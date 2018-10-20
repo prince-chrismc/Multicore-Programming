@@ -45,7 +45,7 @@ bool GlmVec2Comparator::operator()( const glm::vec2& l, const glm::vec2& r ) con
    return std::tie( l.x, l.y ) < std::tie( r.x, r.y );
 }
 
-Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particles ) : m_Blackhole( x, y ), m_Color( col )
+Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particles ) : m_Blackhole( std::make_unique<Blackhole>( x, y ) ), m_Color( col )
 {
    static constexpr const long double PI = 3.141592653589793238462643383279502884L;
 
@@ -80,12 +80,12 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
    tbb::parallel_for( tbb::blocked_range<size_t>( 0, particles ), PositionGenerator );
 
    for( auto pos : positions )
-      m_Stars.insert( std::make_pair( pos, Particle( pos.x, pos.y, 0.76L + numGenMass( gen ) / std::numeric_limits<long double>::max() ) ) );
+      m_Stars.insert( std::make_pair( pos, std::make_unique<Particle>( pos.x, pos.y, 0.76L + numGenMass( gen ) / std::numeric_limits<long double>::max() ) ) );
 }
 
 void Galaxy::Draw() const
 {
-   m_Blackhole.Draw();
+   m_Blackhole->Draw();
    Shader::Linked::GetInstance()->SetUniformInt( "object_color", (GLint)m_Color );
-   for( auto& Particle : m_Stars ) Particle.second.Draw();
+   for( auto& Particle : m_Stars ) Particle.second->Draw();
 }
