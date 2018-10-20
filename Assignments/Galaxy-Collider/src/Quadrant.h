@@ -39,7 +39,7 @@ public:
 
    void Draw() const;
 
-   void insert( std::unique_ptr<Particle> particle );
+   void insert( Particle* particle );
 
    glm::vec2 calcForce( Particle* particle ) const;
 
@@ -57,7 +57,7 @@ private:
 
       enum Type { NOTHING, PARTICLE, QUADRANT } m_Type;
       std::array<std::unique_ptr<Quadrant>, 4> m_Quadrants;
-      std::unique_ptr<Particle> m_Particle;
+      Particle* m_Particle;
    } m_Contains;
    tbb::queuing_mutex m_ContainerMutex;
 

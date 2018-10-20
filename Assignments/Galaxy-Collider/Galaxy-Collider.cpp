@@ -43,11 +43,11 @@ void key_callback( GLFWwindow* window, int key, int scancode, int action, int mo
 
 void operator<<( Quadrant& lhs, Galaxy& rhs )
 {
-   lhs.insert( std::unique_ptr<Particle>( std::move( rhs.m_Blackhole ) ) );
+   lhs.insert( &rhs.m_Blackhole );
 
-   const auto ParticleMover = [&lhs]( std::pair<const glm::vec2, std::unique_ptr<Particle>>& star )
+   const auto ParticleMover = [&lhs]( std::pair<const glm::vec2, Particle>& star )
    {
-      lhs.insert( std::move( star.second ) );
+      lhs.insert( &star.second );
    };
 
    tbb::parallel_for_each( rhs.m_Stars.begin(), rhs.m_Stars.end(), ParticleMover );
@@ -101,13 +101,13 @@ int main( int argc, char** argv )
    Galaxy galaxy_one( ObjectColors::BLUE, 8.0f, -5.0f, 1.5f, 15000 );
    Galaxy galaxy_small( ObjectColors::GREEN, -5.5f, 8.1f, 2.125f, 25000 );
 
-   const auto calcForOnStarRange = []( Blackhole* blackhole ) {
-      return [ blackhole = *blackhole ]( std::pair<const glm::vec2, std::unique_ptr<Particle>>& star )
+   const auto calcForOnStarRange = []( Blackhole blackhole ) {
+      return [ blackhole = blackhole ]( std::pair<const glm::vec2, Particle>& star )
       {
          const float &x1( blackhole.m_Pos.x ), &y1( blackhole.m_Pos.y );
          const long double &m1( blackhole.m_Mass );
 
-         const float &x2( star.second->m_Pos.x ), &y2( star.second->m_Pos.y );
+         const float &x2( star.second.m_Pos.x ), &y2( star.second.m_Pos.y );
 
          // Calculate distance from the planet with index idx_main
          float r[ 2 ];
@@ -121,8 +121,8 @@ int main( int argc, char** argv )
          const float v = sqrt( Galaxy::GAMMA * m1 / dist );
 
          // Calculate a suitable vector perpendicular to r for the velocity of the tracer
-         star.second->m_Pos.x += ( r[ 1 ] / dist ) * v;
-         star.second->m_Pos.y += ( -r[ 0 ] / dist ) * v;
+         star.second.m_Pos.x += ( r[ 1 ] / dist ) * v;
+         star.second.m_Pos.y += ( -r[ 0 ] / dist ) * v;
       };
    };
 
@@ -141,35 +141,38 @@ int main( int argc, char** argv )
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
-      //galaxy_one.Draw();
-      //galaxy_small.Draw();
+      galaxy_one.Draw();
+      galaxy_small.Draw();
 
-      Quadrant root( -25.0f, 25.0f, -25.0f, 25.0f );
+      Quadrant root( -17.5f, -17.5f, 17.5f, 17.5f );
+
+      window->FreeWindow();
 
       root << galaxy_one;
       root << galaxy_small;
 
+      window->SelectWindow();
       root.Draw();
 
       size_t galaxyCounter = 2;
-      //tbb::parallel_pipeline( 2, tbb::make_filter<void, Galaxy*>( tbb::filter::mode::serial_in_order,
-      //                        [ &galaxyCounter, &galaxy_one, &galaxy_small ]( tbb::flow_control& fc )->Galaxy* {
-      //                           switch( --galaxyCounter )
-      //                           {
-      //                           case 1:
-      //                              return &galaxy_one;
-      //                           case 0:
-      //                              return &galaxy_small;
-      //                           default:
-      //                              fc.stop();
-      //                              break;
-      //                           }
-      //                           return nullptr;
-      //                        } ) &
-      //                        tbb::make_filter<Galaxy*, void>( tbb::filter::mode::parallel, [ &calcForOnStarRange ]( Galaxy* galaxy ) {
-      //                           tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), calcForOnStarRange( galaxy->m_Blackhole.get() ) );
-      //                        } )
-      //                      );
+      tbb::parallel_pipeline( 2, tbb::make_filter<void, Galaxy*>( tbb::filter::mode::serial_in_order,
+                              [ &galaxyCounter, &galaxy_one, &galaxy_small ]( tbb::flow_control& fc )->Galaxy* {
+                                 switch( --galaxyCounter )
+                                 {
+                                 case 1:
+                                    return &galaxy_one;
+                                 case 0:
+                                    return &galaxy_small;
+                                 default:
+                                    fc.stop();
+                                    break;
+                                 }
+                                 return nullptr;
+                              } ) &
+                              tbb::make_filter<Galaxy*, void>( tbb::filter::mode::parallel, [ &calcForOnStarRange ]( Galaxy* galaxy ) {
+                                 tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), calcForOnStarRange( galaxy->m_Blackhole ) );
+                              } )
+                            );
 
       window->NextBuffer();
 

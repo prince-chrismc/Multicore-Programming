@@ -27,7 +27,6 @@ SOFTWARE.
 #include "Particle.h"
 #include "ObjectColors.h"
 #include <map>
-#include <memory>
 
 class Blackhole final : public Particle
 {
@@ -51,7 +50,7 @@ public:
 
    static constexpr const float GAMMA = 0.0000005f;
 
-   std::unique_ptr<Blackhole> m_Blackhole;
+   Blackhole m_Blackhole;
    ObjectColors m_Color;
-   std::map<glm::vec2, std::unique_ptr<Particle>, GlmVec2Comparator> m_Stars;
+   std::map<glm::vec2, Particle, GlmVec2Comparator> m_Stars;
 };

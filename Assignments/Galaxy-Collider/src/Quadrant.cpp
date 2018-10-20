@@ -26,6 +26,7 @@ SOFTWARE.
 #include "Linked.h"
 #include "ObjectColors.h"
 #include <vector>
+#include "Singleton.h"
 
 Quadrant::Quadrant( float x_min, float y_min, float x_max, float y_max ) :
    Quadrant( nullptr, ROOT, x_min, y_min, x_max, y_max )
@@ -51,7 +52,7 @@ void Quadrant::Draw() const
    switch( m_Contains.m_Type )
    {
    case Contains::PARTICLE:
-      m_Contains.m_Particle->Draw();
+      //m_Contains.m_Particle->Draw();
       break;
    case Contains::QUADRANT:
       for( auto& quad : m_Contains.m_Quadrants ) quad->Draw();
@@ -61,14 +62,14 @@ void Quadrant::Draw() const
    }
 }
 
-void Quadrant::insert( std::unique_ptr<Particle> particle )
+void Quadrant::insert( Particle* particle )
 {
    if( m_Space.outsideOfRegion( *particle ) )
    {
       if( m_Space.m_District == ROOT )
          return; // Don't even bother =)
 
-      return m_Parent->insert( std::move( particle ) );
+      return m_Parent->insert( particle );
    }
 
    tbb::queuing_mutex::scoped_lock( m_ContainerMutex );
@@ -77,17 +78,19 @@ void Quadrant::insert( std::unique_ptr<Particle> particle )
    case Contains::NOTHING:
       m_CenterOfMass = particle->m_Pos;
       m_Mass = particle->m_Mass;
-      m_Contains.m_Particle = std::move( particle );
+      m_Contains.m_Particle = particle;
+      m_Contains.m_Type = Contains::PARTICLE;
       break;
 
    case Contains::PARTICLE:
       m_Contains.m_Quadrants = m_Space.makeChildDistricts( this );
-      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( m_Contains.m_Particle->m_Pos ) ]->insert( std::move( m_Contains.m_Particle ) );
-      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( std::move( particle ) );
+      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( m_Contains.m_Particle->m_Pos ) ]->insert( m_Contains.m_Particle );
+      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
+      m_Contains.m_Type = Contains::QUADRANT;
       break;
 
    case Contains::QUADRANT:
-      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( std::move( particle ) );
+      m_Contains.m_Quadrants[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
       break;
 
    default:
@@ -231,6 +234,7 @@ float Quadrant::Spacial::getHeight() const
 //
 Quadrant::Model::Model( float x_min, float y_min, float x_max, float y_max )
 {
+   GlfwWindow::GetInstance()->SelectWindow();
    const GLuint PositonIndex = Shader::Linked::GetInstance()->GetAttributeLocation( "position" );
 
    std::vector<glm::vec3> vertices(
@@ -254,6 +258,7 @@ Quadrant::Model::Model( float x_min, float y_min, float x_max, float y_max )
 
    glBindVertexArray( 0 );
 
+   GlfwWindow::FreeWindow();
    m_NumVertices = (GLsizei)vertices.size();
 }
 
