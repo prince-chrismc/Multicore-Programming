@@ -36,7 +36,8 @@ SOFTWARE.
 #include "Quadrant.h"
 
 #include "tbb/parallel_for_each.h"
-#include <tbb/pipeline.h>
+#include "tbb/pipeline.h"
+#include "tbb/task_scheduler_init.h"
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 
@@ -122,6 +123,7 @@ int main( int argc, char** argv )
       };
    };
 
+   tbb::task_scheduler_init init;
 
    size_t frameCounter = 0;
    auto start = std::chrono::high_resolution_clock::now();
