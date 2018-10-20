@@ -92,7 +92,7 @@ glm::vec2 Quadrant::calcForce( const Particle& particle ) const
    {
       float d = m_Space.getHeight();
       float r = sqrt( ( particle.m_Pos.x - m_CenterOfMass.x ) * ( particle.m_Pos.x - m_CenterOfMass.x ) +
-                      ( particle.m_Pos.y - m_CenterOfMass.y ) * ( particle.m_Pos.y - m_CenterOfMass.y ) );
+         ( particle.m_Pos.y - m_CenterOfMass.y ) * ( particle.m_Pos.y - m_CenterOfMass.y ) );
 
       if( d / r < THETA )
       {
@@ -107,7 +107,12 @@ glm::vec2 Quadrant::calcForce( const Particle& particle ) const
       }
    }
 
-   return acc;
+   static constexpr const float MAX_FORCE = 1.8987654f;
+   return glm::vec2
+   {
+      std::abs( acc.x ) < MAX_FORCE ? acc.x : acc.x > 0 ? MAX_FORCE : 0.0f - MAX_FORCE,
+      std::abs( acc.y ) < MAX_FORCE ? acc.y : acc.y > 0 ? MAX_FORCE : 0.0f - MAX_FORCE
+   };
 }
 
 void Quadrant::print()
