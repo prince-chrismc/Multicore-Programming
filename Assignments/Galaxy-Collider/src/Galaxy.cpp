@@ -26,7 +26,6 @@ SOFTWARE.
 #include "Linked.h"
 #include <tuple>
 #include <random>
-#include <limits>
 #include "tbb/concurrent_vector.h"
 #include "tbb/parallel_for.h"
 
@@ -52,7 +51,7 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
    std::random_device rd;
    std::mt19937 gen( rd() );
    const std::lognormal_distribution<long double> numGenPos( 0.0L, 1.8645L );
-   const std::lognormal_distribution<long double> numGenMass( 2.0L, 125.873275L );
+   const std::lognormal_distribution<float> numGenMass( 0.0f, 1.0f );
 
    tbb::concurrent_vector<glm::vec2> positions;
    const auto PositionGenerator = [ =, &positions, &gen ]( const tbb::blocked_range<size_t>& range )
@@ -80,7 +79,10 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
    tbb::parallel_for( tbb::blocked_range<size_t>( 0, particles ), PositionGenerator );
 
    for( auto pos : positions )
-      m_Stars.insert( std::make_pair( pos, Particle( pos.x, pos.y, 0.76L + numGenMass( gen ) / std::numeric_limits<long double>::max() ) ) );
+   {
+      long double mass = numGenMass( gen ) / 100.0f ;
+      m_Stars.insert( std::make_pair( pos, Particle( pos.x, pos.y, 0.76f + mass ) ) );
+   }
 }
 
 void Galaxy::Draw() const
