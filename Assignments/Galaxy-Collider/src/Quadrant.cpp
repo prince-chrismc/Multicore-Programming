@@ -136,7 +136,7 @@ glm::vec2 Quadrant::calcForce( const Particle& particle ) const
 
 void Quadrant::print() const
 {
-   printf( "Mass of %f centered at { %f, %f }\r\n", m_Mass, m_CenterOfMass.x, m_CenterOfMass.y );
+   printf( "%llu particles with a mass of %f centered at { %f, %f }\r\n", m_TotalParticles, m_Mass, m_CenterOfMass.x, m_CenterOfMass.y );
 }
 
 void Quadrant::calcMassDistribution()
