@@ -56,7 +56,7 @@ private:
    float m_Mass;
 
 
-   static constexpr const float THETA = 0.6f;
+   static constexpr const float THETA = 1.6f;
    static constexpr const float GAMMA = 0.000003f;
 
 

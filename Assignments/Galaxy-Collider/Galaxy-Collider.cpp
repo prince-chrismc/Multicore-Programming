@@ -88,8 +88,8 @@ int main( int argc, char** argv )
    auto shaderProgram = Shader::Linked::GetInstance();
 
    tbb::concurrent_vector<Particle> universe;
-   auto blackholePrime = Galaxy::Build( universe, ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
-   auto blackholeSmall = Galaxy::Build( universe, ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 1250 );
+   auto blackholePrime = Galaxy::Build( universe, ObjectColors::RED, 5.0f, -4.0f, 0.25f, 4000 );
+   auto blackholeSmall = Galaxy::Build( universe, ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 2500 );
 
    const auto calcForOnStarRange = []( Particle* blackhole ) {
       return [ blackhole ]( Particle* star )
