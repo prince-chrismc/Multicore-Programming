@@ -91,11 +91,11 @@ int main( int argc, char** argv )
    auto blackholePrime = Galaxy::Build( universe, ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
    auto blackholeSmall = Galaxy::Build( universe, ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 1250 );
 
-   const auto calcForOnStarRange = [ &universe ]( const Particle& blackhole ) {
+   const auto calcForOnStarRange = []( Particle* blackhole ) {
       return [ blackhole ]( Particle* star )
       {
-         const float &x1( blackhole.m_Pos.x ), &y1( blackhole.m_Pos.y );
-         const long double &m1( blackhole.m_Mass );
+         const float &x1( blackhole->m_Pos.x ), &y1( blackhole->m_Pos.y );
+         const long double &m1( blackhole->m_Mass );
 
          const float &x2( star->m_Pos.x ), &y2( star->m_Pos.y );
 
@@ -116,36 +116,30 @@ int main( int argc, char** argv )
       };
    };
 
-   const size_t NUM_PARTICLES = universe.size() -1 ;
+   const size_t NUM_PARTICLES = universe.size() - 1;
 
    const auto calcForceAroundPrime = calcForOnStarRange( blackholePrime );
    const auto clacForceAroundSmall = calcForOnStarRange( blackholeSmall );
 
-   const auto rotateAroundBlackholeFilter =
-      tbb::make_filter<Particle*, Particle*>(
-         tbb::filter::mode::parallel,
-         [ calcForceAroundPrime, clacForceAroundSmall ]( Particle* particle )
-         {
-            switch( particle->m_Color )
-            {
-            case ObjectColors::RED:
-               calcForceAroundPrime( particle );
-               break;
-            case ObjectColors::GREEN:
-               clacForceAroundSmall( particle );
-               break;
-            default:
-               break; // Skips blackholes!
-            }
-
-            return particle;
-         }
-   );
+   const auto rotateAroundBlackholeFilter = [ calcForceAroundPrime, clacForceAroundSmall ]( Particle* particle )
+   {
+      switch( particle->m_Color )
+      {
+      case ObjectColors::RED:
+         calcForceAroundPrime( particle );
+         break;
+      case ObjectColors::GREEN:
+         clacForceAroundSmall( particle );
+         break;
+      default:
+         break; // Skips blackholes!
+      }
+   };
 
 
-   //
-   // Render Loop
-   //
+//
+// Render Loop
+//
    size_t frameCounter = 0;
    auto start = std::chrono::high_resolution_clock::now();
 
@@ -162,63 +156,50 @@ int main( int argc, char** argv )
 
       Quadrant root( Quadrant::ROOT, -8.0f, -8.0f, 8.0f, 8.0f );
 
-      tbb::atomic<size_t> particleCounter = NUM_PARTICLES;
+      const auto applyForceFilter = [ &root ]( Particle* particle )
+      {
+         particle->m_Pos += root.calcForce( *particle );
 
-      const auto inputFilter =
-         tbb::make_filter<void, Particle*>(
-            tbb::filter::mode::serial_in_order,
-            [ &particleCounter, &universe ]( tbb::flow_control& fc )->Particle*
-            {
-               if( particleCounter > 0 )
-               {
-                  try
-                  {
-                     if( --particleCounter )
-                        return &universe.at( particleCounter );
-                  }
-                  catch( std::out_of_range& e )
-                  {
-                     return nullptr;
-                  }
-               }
+         return particle;
+      };
 
-               fc.stop();
-               return nullptr;
-            }
+      const auto insertFilter = [ &root ]( Particle* particle )
+      {
+         root.insert( particle );
+      };
+
+
+      tbb::parallel_for(
+         tbb::blocked_range<size_t>( 0, NUM_PARTICLES ),
+         [ insertFilter, &universe ]( const tbb::blocked_range<size_t>& range )
+         {
+            for( size_t i = range.begin(); i < range.end(); i++ )
+               insertFilter( &universe.at( i ) );
+         }
       );
-
-      const auto applyForceFilter =
-         tbb::make_filter<Particle*, Particle*>(
-            tbb::filter::mode::parallel,
-            [ &root ]( Particle* particle )
-            {
-               particle->m_Pos += root.calcForce( *particle );
-
-               return particle;
-            }
-      );
-
-      const auto saveFilter =
-         tbb::make_filter<Particle*, void>(
-            tbb::filter::mode::parallel,
-            [ &root ]( Particle* particle )
-            {
-               root.insert( particle );
-            }
-      );
-
-
-      tbb::parallel_pipeline( NUM_PARTICLES / 10, inputFilter & saveFilter );
 
       // Draw Loop
       root.Draw();
 
       root.calcMassDistribution();
 
-      particleCounter = NUM_PARTICLES;
+      tbb::parallel_for(
+         tbb::blocked_range<size_t>( 0, NUM_PARTICLES ),
+         [ rotateAroundBlackholeFilter, &universe ]( const tbb::blocked_range<size_t>& range )
+         {
+            for( size_t i = range.begin(); i < range.end(); i++ )
+               rotateAroundBlackholeFilter( &universe.at( i ) );
+         }
+      );
 
-      tbb::parallel_pipeline( NUM_PARTICLES / 10, inputFilter & rotateAroundBlackholeFilter & applyForceFilter & saveFilter );
-
+      tbb::parallel_for(
+         tbb::blocked_range<size_t>( 0, NUM_PARTICLES ),
+         [ applyForceFilter, &universe ]( const tbb::blocked_range<size_t>& range )
+         {
+            for( size_t i = range.begin(); i < range.end(); i++ )
+               applyForceFilter( &universe.at( i ) );
+         }
+      );
 
       window->NextBuffer();
 
@@ -228,7 +209,7 @@ int main( int argc, char** argv )
       if( elapsed.count() > 5.0 )
       {
          root.print();
-         std::cout << "FPS: " << frameCounter / elapsed.count() << std::endl;
+         std::cout << "FPS: " << frameCounter / static_cast<float>(elapsed.count()) << std::endl;
          frameCounter = 0;
          start = std::chrono::high_resolution_clock::now();
       }

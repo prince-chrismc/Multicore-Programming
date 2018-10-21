@@ -30,9 +30,9 @@ Blackhole::Blackhole(float x, float y) : Particle( ObjectColors::YELLOW, x, y, 1
 {
 }
 
-Blackhole Galaxy::Build( tbb::concurrent_vector<Particle>& out_particles, ObjectColors col, float x, float y, float radius, size_t particles )
+Particle* Galaxy::Build( tbb::concurrent_vector<Particle>& out_particles, ObjectColors col, float x, float y, float radius, size_t particles )
 {
-   out_particles.emplace_back( ObjectColors::YELLOW, x, y, 1453.485L ); // Blackhole
+   auto blackhole = out_particles.emplace_back( ObjectColors::YELLOW, x, y, 1453.485L ); // Blackhole
    static constexpr const long double PI = 3.141592653589793238462643383279502884L;
 
    std::random_device rd;
@@ -64,5 +64,5 @@ Blackhole Galaxy::Build( tbb::concurrent_vector<Particle>& out_particles, Object
 
    tbb::parallel_for( tbb::blocked_range<size_t>( 0, particles ), ParticleGenerator );
 
-   return { x, y };
+   return &*blackhole;
 }

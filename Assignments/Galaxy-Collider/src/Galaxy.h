@@ -37,7 +37,7 @@ public:
 
 namespace Galaxy
 {
-   Blackhole Build( tbb::concurrent_vector<Particle>& out_particles, ObjectColors col, float x, float y, float radius, size_t particles );
+   Particle* Build( tbb::concurrent_vector<Particle>& out_particles, ObjectColors col, float x, float y, float radius, size_t particles );
 
    static constexpr const float GAMMA = 0.000001f;
 };
