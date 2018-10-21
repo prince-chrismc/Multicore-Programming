@@ -54,13 +54,17 @@ void Quadrant::insert( Particle* particle )
    if( m_Space.outsideOfRegion( *particle ) )
       return; // Don't even bother =)
 
+   m_InsertLock.lock();
    if( auto pval = std::get_if<Particle*>( &m_Contains ) )
    {
       float r = sqrt( ( particle->m_Pos.x - ( *pval )->m_Pos.x ) * ( particle->m_Pos.x - ( *pval )->m_Pos.x ) +
          ( particle->m_Pos.y - ( *pval )->m_Pos.y ) * ( particle->m_Pos.y - ( *pval )->m_Pos.y ) );
 
       if( r < GAMMA * 100 )
+      {
+         m_InsertLock.unlock();
          return; // The particle is too close just drop it...
+      }
 
       std::array<std::unique_ptr<Quadrant>, 4> oChildQuads = m_Space.makeChildDistricts();
       oChildQuads[ m_Space.determineChildDistrict( (*pval)->m_Pos ) ]->insert( *pval );
@@ -73,7 +77,9 @@ void Quadrant::insert( Particle* particle )
    }
    else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
    {
-      ( *pval )[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
+      m_TotalParticles++;
+      m_InsertLock.unlock();
+      return ( *pval )[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
    }
    else
    {
@@ -83,6 +89,7 @@ void Quadrant::insert( Particle* particle )
    }
 
    m_TotalParticles++;
+   m_InsertLock.unlock();
 }
 
 glm::vec2 Quadrant::calcForce( const Particle& particle ) const

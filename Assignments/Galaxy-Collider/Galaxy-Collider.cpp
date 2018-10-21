@@ -160,7 +160,6 @@ int main( int argc, char** argv )
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
-      Quadrant bufferRoot( Quadrant::ROOT, -8.0f, -8.0f, 8.0f, 8.0f );
       Quadrant root( Quadrant::ROOT, -8.0f, -8.0f, 8.0f, 8.0f );
 
       tbb::atomic<size_t> particleCounter = NUM_PARTICLES;
@@ -188,46 +187,37 @@ int main( int argc, char** argv )
             }
       );
 
-      const auto insertFiler =
-         tbb::make_filter<Particle*, Particle*>(
-            tbb::filter::mode::serial_out_of_order,
-            [ &bufferRoot ]( Particle* particle )
-            {
-               bufferRoot.insert( particle );
-               return particle;
-            }
-      );
-
       const auto applyForceFilter =
          tbb::make_filter<Particle*, Particle*>(
             tbb::filter::mode::parallel,
-            [ &bufferRoot ]( Particle* particle )
+            [ &root ]( Particle* particle )
             {
-               particle->m_Pos += bufferRoot.calcForce( *particle );
+               particle->m_Pos += root.calcForce( *particle );
 
                return particle;
             }
       );
 
-      const auto saveFiler =
+      const auto saveFilter =
          tbb::make_filter<Particle*, void>(
-            tbb::filter::mode::serial_out_of_order,
+            tbb::filter::mode::parallel,
             [ &root ]( Particle* particle )
             {
                root.insert( particle );
-               return particle;
             }
       );
 
-      tbb::parallel_pipeline( NUM_PARTICLES / 10, inputFilter & rotateAroundBlackholeFilter & insertFiler & applyForceFilter & saveFiler );
+
+      tbb::parallel_pipeline( NUM_PARTICLES / 10, inputFilter & saveFilter );
 
       // Draw Loop
       root.Draw();
 
       root.calcMassDistribution();
 
+      particleCounter = NUM_PARTICLES;
 
-
+      tbb::parallel_pipeline( NUM_PARTICLES / 10, inputFilter & rotateAroundBlackholeFilter & applyForceFilter & saveFilter );
 
 
       window->NextBuffer();
@@ -237,7 +227,7 @@ int main( int argc, char** argv )
 
       if( elapsed.count() > 5.0 )
       {
-         bufferRoot.print();
+         root.print();
          std::cout << "FPS: " << frameCounter / elapsed.count() << std::endl;
          frameCounter = 0;
          start = std::chrono::high_resolution_clock::now();

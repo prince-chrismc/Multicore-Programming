@@ -29,6 +29,7 @@ SOFTWARE.
 #include <array>
 #include <memory>
 #include <optional>
+#include <mutex>
 
 class Quadrant
 {
@@ -46,7 +47,7 @@ public:
    void print() const;
 
 private:
-
+   std::mutex m_InsertLock;
    std::variant<int, Particle*, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
 
    unsigned long long m_TotalParticles;
