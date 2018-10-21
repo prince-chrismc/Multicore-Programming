@@ -24,60 +24,32 @@ SOFTWARE.
 
 */
 
-#include <GL/glew.h>
 #include "Singleton.h"
 #include "Linked.h"
-#include "Shaders.h"
 #include "Camera.h"
-#include <iostream>
-#include <chrono>
+#include "AppController.h"
 
 #include "Galaxy.h"
 #include "Quadrant.h"
 
 #include "tbb/parallel_for_each.h"
-#include "tbb/pipeline.h"
 #include "tbb/task_scheduler_init.h"
 
-void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
+#include <iostream>
+#include <chrono>
+
 
 int main( int argc, char** argv )
 {
-   std::cout << argv[ 0 ] << std::endl;
-   std::cout << "Welcome to the Galaxy Collider Simulator!" << std::endl;
+   AppController( argc, argv );
 
-   // Create a GLFWwindow
    try
    {
-      auto window = GlfwWindow::CreateInstance( "Galaxy Collider Simulator by Christopher McArthur" );
-      window->SetKeyCallback( key_callback );
+      AppController::InitOpenGL();
    }
    catch( const std::exception& e )
    {
-      std::cout << "Window Creation Failed: " << e.what() << std::endl;
-      getchar();
-      return -1;
-   }
-
-   // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
-   glewExperimental = GL_TRUE;
-   // Initialize GLEW to setup the OpenGL Function pointers
-   if( glewInit() != GLEW_OK )
-   {
-      std::cout << "Failed to initialize GLEW" << std::endl;
-      return -1;
-   }
-
-   // Build and compile our shader program
-   try
-   {
-      Shader::Vertex vertexShader( "../Galaxy-Collider/shaders/vertex.shader" );
-      Shader::Fragment fragmentShader( "../Galaxy-Collider/shaders/fragment.shader" );
-      Shader::Linked::GetInstance()->Init( &vertexShader, &fragmentShader );
-   }
-   catch( const std::exception& e )
-   {
-      std::cout << "Shader Setup Failed: " << e.what() << std::endl;
+      std::cout << "Failed: " << e.what() << std::endl;
       getchar();
       return -1;
    }
@@ -224,26 +196,4 @@ int main( int argc, char** argv )
    }
 
    return 0;
-}
-
-//
-// CALLBACK FUNCTIONS
-//
-void key_callback( GLFWwindow* window, int key, int, int action, int )
-{
-   // we are only concerned about key presses not releases
-   if( action != GLFW_PRESS )
-      return;
-
-   switch( key )
-   {
-   case GLFW_KEY_ESCAPE:
-      // Window close
-      glfwSetWindowShouldClose( window, GLFW_TRUE );
-      break;
-
-   default:
-      // Do Nothing
-      break;
-   };
 }
