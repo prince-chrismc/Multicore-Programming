@@ -56,7 +56,7 @@ void AppController::InitOpenGL() const
 void AppController::Start()
 {
    m_FrameCounter = 0;
-   m_Start = std::chrono::high_resolution_clock::now();
+   m_Start = std::chrono::steady_clock::now();
 }
 
 bool AppController::operator++(int)
@@ -64,7 +64,7 @@ bool AppController::operator++(int)
    GlfwWindow::GetInstance()->NextBuffer();
 
    m_FrameCounter++;
-   auto elapsed = std::chrono::duration_cast<std::chrono::seconds>( std::chrono::high_resolution_clock::now() - m_Start );
+   auto elapsed = std::chrono::duration_cast<std::chrono::seconds>( std::chrono::steady_clock::now() - m_Start );
 
    if( elapsed.count() > 5.0 )
    {
