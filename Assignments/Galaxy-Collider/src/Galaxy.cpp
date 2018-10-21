@@ -32,7 +32,7 @@ Blackhole::Blackhole(float x, float y) : Particle( ObjectColors::YELLOW, x, y, 1
 
 Particle* Galaxy::Build( tbb::concurrent_vector<Particle>& out_particles, ObjectColors col, float x, float y, float radius, size_t particles )
 {
-   auto blackhole = out_particles.emplace_back( ObjectColors::YELLOW, x, y, 18453.485L ); // Blackhole
+   const auto blackhole = out_particles.emplace_back( ObjectColors::YELLOW, x, y, 1453.485L ); // Blackhole
    static constexpr const long double PI = 3.141592653589793238462643383279502884L;
 
    std::random_device rd;
