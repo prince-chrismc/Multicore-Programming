@@ -37,10 +37,10 @@ Particle* Galaxy::Build( tbb::concurrent_vector<Particle>& out_particles, Object
 
    std::random_device rd;
    std::mt19937 gen( rd() );
-   const std::lognormal_distribution<long double> numGenPos( 0.0L, 1.8645L );
-   const std::lognormal_distribution<float> numGenMass( 0.0f, 1.0f );
+   std::lognormal_distribution<double> numGenPos( 0.0, 1.8645 );
+   std::lognormal_distribution<float> numGenMass( 0.0f, 1.0f );
 
-   const auto ParticleGenerator = [ =, &out_particles, &gen ]( const tbb::blocked_range<size_t>& range )
+   const auto ParticleGenerator = [ & ]( const tbb::blocked_range<size_t>& range )
    {
       for( size_t i = range.begin(); i < range.end(); i++ )
       {
@@ -50,7 +50,6 @@ Particle* Galaxy::Build( tbb::concurrent_vector<Particle>& out_particles, Object
          // in Cartesian coordinates
          const float rel_x = r * cos( a );
          const float rel_y = r * sin( a );
-
 
          // distance in parsec by pythag
          const float dist = sqrt( rel_x * rel_x + rel_y * rel_y );

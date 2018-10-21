@@ -73,7 +73,7 @@ void Quadrant::insert( Particle* particle )
 
             std::random_device rd;
             std::mt19937 gen( rd() );
-            const std::lognormal_distribution<float> numGenPos( 0.0f, 1.8645f );
+            std::lognormal_distribution<float> numGenPos( 0.0f, 1.8645f );
 
             const auto angle = static_cast<float>( numGenPos( gen ) * 2.0L * PI );
             const auto travel = sqrt( numGenPos( gen ) * 1.8987654f );
