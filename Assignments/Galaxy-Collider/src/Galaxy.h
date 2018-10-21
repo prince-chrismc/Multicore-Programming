@@ -39,5 +39,5 @@ namespace Galaxy
 {
    Particle* Build( tbb::concurrent_vector<Particle>& out_particles, ObjectColors col, float x, float y, float radius, size_t particles );
 
-   static constexpr const float GAMMA = 0.0000007f;
+   static constexpr const float GAMMA = 0.00000035f;
 };

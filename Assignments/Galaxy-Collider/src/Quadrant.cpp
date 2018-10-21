@@ -64,7 +64,7 @@ void Quadrant::insert( Particle* particle )
       {
          if( particle->m_Color != ObjectColors::YELLOW )
          {
-            particle->m_Pos = { -10000.0f, -10000.0f };
+            particle->m_Pos = { -1000.0f, -1000.0f };
             auto myParticle = const_cast<Particle*>( *pval );
             myParticle->m_Mass += particle->m_Mass / 2.0L;
             particle->m_Mass = 0.0L;
