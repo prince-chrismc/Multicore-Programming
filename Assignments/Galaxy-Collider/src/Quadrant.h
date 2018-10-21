@@ -39,7 +39,7 @@ public:
 
    void Draw();
 
-   void insert( const Particle& particle );
+   void insert( Particle* particle );
 
    void calcMassDistribution();
    glm::vec2 calcForce( const Particle& particle ) const;
@@ -47,7 +47,7 @@ public:
 
 private:
 
-   std::variant<int, Particle, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
+   std::variant<int, Particle*, std::array<std::unique_ptr<Quadrant>, 4>> m_Contains;
 
    unsigned long long m_TotalParticles;
 

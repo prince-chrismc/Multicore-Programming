@@ -23,29 +23,16 @@ SOFTWARE.
 */
 
 #include "Galaxy.h"
-#include "Linked.h"
-#include <tuple>
 #include <random>
-#include "tbb/concurrent_vector.h"
 #include "tbb/parallel_for.h"
 
-Blackhole::Blackhole( float x, float y ) : Particle( x, y, 1453.485L )
+Blackhole::Blackhole(float x, float y) : Particle( ObjectColors::YELLOW, x, y, 1453.485L )
 {
 }
 
-void Blackhole::Draw() const
+Blackhole Galaxy::Build( tbb::concurrent_vector<Particle>& out_particles, ObjectColors col, float x, float y, float radius, size_t particles )
 {
-   Shader::Linked::GetInstance()->SetUniformInt( "object_color", (GLint)ObjectColors::YELLOW );
-   Particle::Draw();
-}
-
-bool GlmVec2Comparator::operator()( const glm::vec2& l, const glm::vec2& r ) const
-{
-   return std::tie( l.x, l.y ) < std::tie( r.x, r.y );
-}
-
-Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particles ) : m_Blackhole( x, y ), m_Color( col )
-{
+   out_particles.emplace_back( ObjectColors::YELLOW, x, y, 1453.485L ); // Blackhole
    static constexpr const long double PI = 3.141592653589793238462643383279502884L;
 
    std::random_device rd;
@@ -53,8 +40,7 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
    const std::lognormal_distribution<long double> numGenPos( 0.0L, 1.8645L );
    const std::lognormal_distribution<float> numGenMass( 0.0f, 1.0f );
 
-   tbb::concurrent_vector<glm::vec2> positions;
-   const auto PositionGenerator = [ =, &positions, &gen ]( const tbb::blocked_range<size_t>& range )
+   const auto ParticleGenerator = [ =, &out_particles, &gen ]( const tbb::blocked_range<size_t>& range )
    {
       for( size_t i = range.begin(); i < range.end(); i++ )
       {
@@ -70,24 +56,13 @@ Galaxy::Galaxy( ObjectColors col, float x, float y, float radius, size_t particl
          const float dist = sqrt( rel_x * rel_x + rel_y * rel_y );
 
          if( dist < radius * 4.8746f )
-            positions.emplace_back( rel_x + x, rel_y + y );
+            out_particles.emplace_back( col, rel_x + x, rel_y + y, 0.76f + numGenMass( gen ) / 100.0f );
          else
             i -= 1;
       }
    };
 
-   tbb::parallel_for( tbb::blocked_range<size_t>( 0, particles ), PositionGenerator );
+   tbb::parallel_for( tbb::blocked_range<size_t>( 0, particles ), ParticleGenerator );
 
-   for( auto pos : positions )
-   {
-      long double mass = numGenMass( gen ) / 100.0f ;
-      m_Stars.insert( std::make_pair( pos, Particle( pos.x, pos.y, 0.76f + mass ) ) );
-   }
-}
-
-void Galaxy::Draw() const
-{
-   m_Blackhole.Draw();
-   Shader::Linked::GetInstance()->SetUniformInt( "object_color", (GLint)m_Color );
-   for( auto& Particle : m_Stars ) Particle.second.Draw();
+   return { x, y };
 }

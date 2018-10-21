@@ -36,6 +36,7 @@ void Particle::Draw() const
    glm::mat4 model_matrix(1.0f);
    model_matrix = glm::translate(model_matrix, {m_Pos.x, m_Pos.y, 0.0f});
    shaderProgram->SetUniformMat4("model_matrix", model_matrix);
+   shaderProgram->SetUniformInt( "object_color", (GLint)m_Color );
 
    Model::GetInstance().Draw();
 }

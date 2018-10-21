@@ -26,31 +26,18 @@ SOFTWARE.
 
 #include "Particle.h"
 #include "ObjectColors.h"
-#include <map>
+#include "tbb/concurrent_vector.h"
 
 class Blackhole final : public Particle
 {
 public:
    Blackhole( float x, float y );
-
-   void Draw() const override;
 };
 
-struct GlmVec2Comparator
-{
-   bool operator()( const glm::vec2& l, const glm::vec2& r ) const;
-};
 
-class Galaxy
+namespace Galaxy
 {
-public:
-   Galaxy( ObjectColors col, float x, float y, float radius, size_t particles );
-
-   void Draw() const;
+   Blackhole Build( tbb::concurrent_vector<Particle>& out_particles, ObjectColors col, float x, float y, float radius, size_t particles );
 
    static constexpr const float GAMMA = 0.000001f;
-
-   Blackhole m_Blackhole;
-   ObjectColors m_Color;
-   std::map<glm::vec2, Particle, GlmVec2Comparator> m_Stars;
 };

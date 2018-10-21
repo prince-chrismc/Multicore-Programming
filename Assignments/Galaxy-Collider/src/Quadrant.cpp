@@ -43,22 +43,28 @@ void Quadrant::Draw()
    m_oModel.emplace( m_Space.m_MinX, m_Space.m_MinY, m_Space.m_MaxX, m_Space.m_MaxY );
    m_oModel->Draw();
 
-   if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
+   if( auto pval = std::get_if<Particle*>( &m_Contains ) )
+      ( *pval )->Draw();
+   else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
       for( auto& quad : *pval ) quad->Draw();
 }
 
-void Quadrant::insert( const Particle& particle )
+void Quadrant::insert( Particle* particle )
 {
-   if( m_Space.outsideOfRegion( particle ) )
+   if( m_Space.outsideOfRegion( *particle ) )
       return; // Don't even bother =)
 
-   if( auto pval = std::get_if<Particle>( &m_Contains ) )
+   if( auto pval = std::get_if<Particle*>( &m_Contains ) )
    {
-      Particle existingParticles = *pval;
+      float r = sqrt( ( particle->m_Pos.x - ( *pval )->m_Pos.x ) * ( particle->m_Pos.x - ( *pval )->m_Pos.x ) +
+         ( particle->m_Pos.y - ( *pval )->m_Pos.y ) * ( particle->m_Pos.y - ( *pval )->m_Pos.y ) );
+
+      if( r < GAMMA * 100 )
+         return; // The particle is too close just drop it...
 
       std::array<std::unique_ptr<Quadrant>, 4> oChildQuads = m_Space.makeChildDistricts();
-      oChildQuads[ m_Space.determineChildDistrict( existingParticles.m_Pos ) ]->insert( existingParticles );
-      oChildQuads[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle );
+      oChildQuads[ m_Space.determineChildDistrict( (*pval)->m_Pos ) ]->insert( *pval );
+      oChildQuads[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
 
       m_Contains.emplace<std::array<std::unique_ptr<Quadrant>, 4>>( std::move( oChildQuads ) );
 
@@ -67,13 +73,13 @@ void Quadrant::insert( const Particle& particle )
    }
    else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
    {
-         ( *pval )[ m_Space.determineChildDistrict( particle.m_Pos ) ]->insert( particle );
+      ( *pval )[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
    }
    else
    {
-      m_Contains.emplace<Particle>( particle );
-      m_CenterOfMass = particle.m_Pos;
-      m_Mass = particle.m_Mass;
+      m_Contains.emplace<Particle*>( particle );
+      m_CenterOfMass = particle->m_Pos;
+      m_Mass = particle->m_Mass;
    }
 
    m_TotalParticles++;
@@ -83,9 +89,9 @@ glm::vec2 Quadrant::calcForce( const Particle& particle ) const
 {
    glm::vec2 acc{ 0.0f, 0.0f };
 
-   if( auto pval = std::get_if<Particle>( &m_Contains ) )
+   if( auto pval = std::get_if<Particle*>( &m_Contains ) )
    {
-      acc = calcAcceleration( particle, *pval );
+      acc = calcAcceleration( particle, **pval );
    }
    else if( auto pval = std::get_if<std::array<std::unique_ptr<Quadrant>, 4>>( &m_Contains ) )
    {

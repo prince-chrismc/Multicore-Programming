@@ -41,14 +41,6 @@ SOFTWARE.
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 
-void operator<<( Quadrant& lhs, const Galaxy& rhs )
-{
-   lhs.insert( rhs.m_Blackhole );
-
-   for( auto& star : rhs.m_Stars )
-      lhs.insert( star.second );
-}
-
 int main( int argc, char** argv )
 {
    std::cout << argv[ 0 ] << std::endl;
@@ -95,16 +87,17 @@ int main( int argc, char** argv )
    auto window = GlfwWindow::GetInstance();
    auto shaderProgram = Shader::Linked::GetInstance();
 
-   Galaxy galaxy_two( ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
-   Galaxy galaxy_small( ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 1250 );
+   tbb::concurrent_vector<Particle> universe;
+   auto blackholePrime = Galaxy::Build( universe, ObjectColors::RED, 5.0f, -4.0f, 0.25f, 2000 );
+   auto blackholeSmall = Galaxy::Build( universe, ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 1250 );
 
-   const auto calcForOnStarRange = []( Blackhole blackhole ) {
-      return [ blackhole = blackhole ]( std::pair<const glm::vec2, Particle>& star )
+   const auto calcForOnStarRange = [ &universe ]( const Particle& blackhole ) {
+      return [ blackhole ]( Particle* star )
       {
          const float &x1( blackhole.m_Pos.x ), &y1( blackhole.m_Pos.y );
          const long double &m1( blackhole.m_Mass );
 
-         const float &x2( star.second.m_Pos.x ), &y2( star.second.m_Pos.y );
+         const float &x2( star->m_Pos.x ), &y2( star->m_Pos.y );
 
          // Calculate distance from the planet with index idx_main
          float r[ 2 ];
@@ -118,13 +111,41 @@ int main( int argc, char** argv )
          const float v = sqrt( Galaxy::GAMMA * m1 / dist );
 
          // Calculate a suitable vector perpendicular to r for the velocity of the tracer
-         star.second.m_Pos.x += ( r[ 1 ] / dist ) * v;
-         star.second.m_Pos.y += ( -r[ 0 ] / dist ) * v;
+         star->m_Pos.x += ( r[ 1 ] / dist ) * v;
+         star->m_Pos.y += ( -r[ 0 ] / dist ) * v;
       };
    };
 
-   tbb::task_scheduler_init init;
+   const size_t NUM_PARTICLES = universe.size() -1 ;
 
+   const auto calcForceAroundPrime = calcForOnStarRange( blackholePrime );
+   const auto clacForceAroundSmall = calcForOnStarRange( blackholeSmall );
+
+   const auto rotateAroundBlackholeFilter =
+      tbb::make_filter<Particle*, Particle*>(
+         tbb::filter::mode::parallel,
+         [ calcForceAroundPrime, clacForceAroundSmall ]( Particle* particle )
+         {
+            switch( particle->m_Color )
+            {
+            case ObjectColors::RED:
+               calcForceAroundPrime( particle );
+               break;
+            case ObjectColors::GREEN:
+               clacForceAroundSmall( particle );
+               break;
+            default:
+               break; // Skips blackholes!
+            }
+
+            return particle;
+         }
+   );
+
+
+   //
+   // Render Loop
+   //
    size_t frameCounter = 0;
    auto start = std::chrono::high_resolution_clock::now();
 
@@ -139,48 +160,73 @@ int main( int argc, char** argv )
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
+      Quadrant bufferRoot( Quadrant::ROOT, -8.0f, -8.0f, 8.0f, 8.0f );
       Quadrant root( Quadrant::ROOT, -8.0f, -8.0f, 8.0f, 8.0f );
-      root << galaxy_small;
-      root << galaxy_two;
+
+      tbb::atomic<size_t> particleCounter = NUM_PARTICLES;
+
+      const auto inputFilter =
+         tbb::make_filter<void, Particle*>(
+            tbb::filter::mode::serial_in_order,
+            [ &particleCounter, &universe ]( tbb::flow_control& fc )->Particle*
+            {
+               if( particleCounter > 0 )
+               {
+                  try
+                  {
+                     if( --particleCounter )
+                        return &universe.at( particleCounter );
+                  }
+                  catch( std::out_of_range& e )
+                  {
+                     return nullptr;
+                  }
+               }
+
+               fc.stop();
+               return nullptr;
+            }
+      );
+
+      const auto insertFiler =
+         tbb::make_filter<Particle*, Particle*>(
+            tbb::filter::mode::serial_out_of_order,
+            [ &bufferRoot ]( Particle* particle )
+            {
+               bufferRoot.insert( particle );
+               return particle;
+            }
+      );
+
+      const auto applyForceFilter =
+         tbb::make_filter<Particle*, Particle*>(
+            tbb::filter::mode::parallel,
+            [ &bufferRoot ]( Particle* particle )
+            {
+               particle->m_Pos += bufferRoot.calcForce( *particle );
+
+               return particle;
+            }
+      );
+
+      const auto saveFiler =
+         tbb::make_filter<Particle*, void>(
+            tbb::filter::mode::serial_out_of_order,
+            [ &root ]( Particle* particle )
+            {
+               root.insert( particle );
+               return particle;
+            }
+      );
+
+      tbb::parallel_pipeline( NUM_PARTICLES / 10, inputFilter & rotateAroundBlackholeFilter & insertFiler & applyForceFilter & saveFiler );
 
       // Draw Loop
       root.Draw();
-      galaxy_small.Draw();
-      galaxy_two.Draw();
 
       root.calcMassDistribution();
 
-      size_t galaxyCounter = 2;
-      tbb::parallel_pipeline( 2, tbb::make_filter<void, Galaxy*>( tbb::filter::mode::serial_in_order,
-                              [ &galaxyCounter, &galaxy_two, &galaxy_small ]( tbb::flow_control& fc )->Galaxy*
-                              {
-                                 switch( --galaxyCounter )
-                                 {
-                                 case 1:
-                                    return &galaxy_two;
-                                 case 0:
-                                    return &galaxy_small;
-                                 default:
-                                    fc.stop();
-                                    break;
-                                 }
-                                 return nullptr;
-                              } ) &
-                              tbb::make_filter<Galaxy*, Galaxy*>( tbb::filter::mode::parallel, [ &calcForOnStarRange ]( Galaxy* galaxy ) {
-                                 tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), calcForOnStarRange( galaxy->m_Blackhole ) );
-                                 return galaxy;
-                                                                  } ) &
-                                 tbb::make_filter<Galaxy*, Galaxy*>( tbb::filter::mode::parallel, [ &root ]( Galaxy* galaxy ) {
-                                                                     galaxy->m_Blackhole.m_Pos += root.calcForce( galaxy->m_Blackhole );
-                                                                     return galaxy;
-                                                                     } ) &
-                                                                     tbb::make_filter<Galaxy*, void>( tbb::filter::mode::parallel, [ &root ]( Galaxy* galaxy ) {
-                                                                        tbb::parallel_for_each( galaxy->m_Stars.begin(), galaxy->m_Stars.end(), [ & ]( std::pair<const glm::vec2, Particle>& star )
-                                                                                                {
-                                                                                                   star.second.m_Pos += root.calcForce( star.second );
-                                                                                                } );
-                                                                                                      } )
-                                                                        );
+
 
 
 
@@ -191,7 +237,7 @@ int main( int argc, char** argv )
 
       if( elapsed.count() > 5.0 )
       {
-         root.print();
+         bufferRoot.print();
          std::cout << "FPS: " << frameCounter / elapsed.count() << std::endl;
          frameCounter = 0;
          start = std::chrono::high_resolution_clock::now();

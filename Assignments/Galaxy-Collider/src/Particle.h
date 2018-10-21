@@ -28,22 +28,19 @@ SOFTWARE.
 #include <memory>
 #include <GL/glew.h>
 #include "glm/vec2.hpp"
+#include "ObjectColors.h"
 
 class Particle
 {
 public:
-   Particle( float x, float  y, long double m ) : m_Pos( x, y ), m_Mass( m ) {}
-   Particle( const Particle& ) = default;
-   Particle( const Particle&& ) = delete;
+   Particle( ObjectColors col, float x, float  y, long double m ) : m_Pos( x, y ), m_Mass( m ), m_Color(col) {}
    virtual ~Particle() = default;
-
-   void operator=( const Particle& ) = delete;
-   void operator=( const Particle&& ) = delete;
 
    virtual void Draw() const;
 
    glm::vec2 m_Pos;
    const long double m_Mass;
+   ObjectColors m_Color;
 
 private:
    class Model;
