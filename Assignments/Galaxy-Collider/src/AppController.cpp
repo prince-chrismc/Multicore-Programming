@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "AppController.h"
 #include <GL/glew.h>
+#include "AppController.h"
 #include "Singleton.h"
 #include "Linked.h"
 #include "Shaders.h"
@@ -38,9 +38,8 @@ AppController::AppController( int /*argc*/, char ** argv )
 void AppController::InitOpenGL()
 {
    // Create a GLFW window
-   auto window = GlfwWindow::CreateInstance( "Galaxy Collider Simulator by Christopher McArthur" );
-   auto oldCallback = window->SetKeyCallback( key_callback );
-   if( oldCallback != nullptr ) throw std::runtime_error( "GLFW callback already set!" );
+   const auto window = GlfwWindow::CreateInstance( "Galaxy Collider Simulator by Christopher McArthur" );
+   if( window->SetKeyCallback( key_callback ) != nullptr ) throw std::runtime_error( "GLFW callback already set!" );
 
    // Setup GLEW
    glewExperimental = GL_TRUE; // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
@@ -56,7 +55,7 @@ void AppController::InitOpenGL()
 //
 // CALLBACK FUNCTIONS
 //
-void AppController::key_callback( GLFWwindow * window, int key, int /*scancode*/, int action, int /*mode*/ )
+void AppController::key_callback( GLFWwindow* window, int key, int /*scancode*/, int action, int /*mode*/ )
 {
       // we are only concerned about key presses not releases
    if( action != GLFW_PRESS )

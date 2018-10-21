@@ -34,7 +34,7 @@ Blackhole::Blackhole(float x, float y) : Particle( ObjectColors::YELLOW, x, y, 1
 {
 }
 
-Particle* Galaxy::Build( tbb::concurrent_vector<Particle>& out_particles, ObjectColors col, float x, float y, float radius, size_t particles )
+Particle* Galaxy::Build( Universe& out_particles, ObjectColors col, float x, float y, float radius, size_t particles )
 {
    const auto blackhole = out_particles.emplace_back( ObjectColors::YELLOW, x, y, 1453.485L ); // Blackhole
    static constexpr const long double PI = 3.141592653589793238462643383279502884L;
@@ -68,4 +68,38 @@ Particle* Galaxy::Build( tbb::concurrent_vector<Particle>& out_particles, Object
    tbb::parallel_for( tbb::blocked_range<size_t>( 0, particles ), ParticleGenerator );
 
    return &*blackhole;
+}
+
+Galaxy::ParticleManipulator Galaxy::GenerateRotationAlgorithm(Particle* blackhole, bool clockwise)
+{
+   return [ = ]( Particle* star )
+   {
+      const float &x1( blackhole->m_Pos.x ), &y1( blackhole->m_Pos.y );
+      const long double &m1( blackhole->m_Mass );
+
+      const float &x2( star->m_Pos.x ), &y2( star->m_Pos.y );
+
+      // Calculate distance from the planet with index idx_main
+      float r[ 2 ];
+      r[ 0 ] = x1 - x2;
+      r[ 1 ] = y1 - y2;
+
+      // distance in parsec by pythag
+      const float dist = sqrt( r[ 0 ] * r[ 0 ] + r[ 1 ] * r[ 1 ] );
+
+      // Based on the distance from the sun calculate the velocity needed to maintain a circular orbit
+      const float v = sqrt( Galaxy::GAMMA * m1 / dist );
+
+      // Calculate a suitable vector perpendicular to r for the velocity of the tracer
+      if( clockwise )
+      {
+         star->m_Pos.x += ( r[ 1 ] / dist ) * v;
+         star->m_Pos.y += ( -r[ 0 ] / dist ) * v;
+      }
+      else
+      {
+         star->m_Pos.x -= ( r[ 1 ] / dist ) * v;
+         star->m_Pos.y -= ( -r[ 0 ] / dist ) * v;
+      }
+   };
 }

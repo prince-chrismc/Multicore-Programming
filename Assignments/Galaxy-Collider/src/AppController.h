@@ -23,7 +23,8 @@ SOFTWARE.
 */
 
 #pragma once
-#include "Window.h"
+
+struct GLFWwindow;
 
 class AppController
 {

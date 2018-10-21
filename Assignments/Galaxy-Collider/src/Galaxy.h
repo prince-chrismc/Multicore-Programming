@@ -27,6 +27,7 @@ SOFTWARE.
 #include "Particle.h"
 #include "ObjectColors.h"
 #include "tbb/concurrent_vector.h"
+#include <functional>
 
 class Blackhole final : public Particle
 {
@@ -34,10 +35,14 @@ public:
    Blackhole( float x, float y );
 };
 
+using Universe = tbb::concurrent_vector<Particle>;
 
 namespace Galaxy
 {
-   Particle* Build( tbb::concurrent_vector<Particle>& out_particles, ObjectColors col, float x, float y, float radius, size_t particles );
+   Particle* Build( Universe& out_particles, ObjectColors col, float x, float y, float radius, size_t particles );
+
+   using ParticleManipulator = std::function<void( Particle* )>;
+   ParticleManipulator GenerateRotationAlgorithm( Particle* blackhole, bool clockwise );
 
    static constexpr const float GAMMA = 0.0000014f;
 };
