@@ -40,11 +40,11 @@ void Quadrant::Draw()
    shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::GREY );
    shaderProgram->SetUniformMat4( "model_matrix", glm::mat4( 1.0f ) );
 
-   if( m_Space.getHeight() > 0.05f )
-   {
-      m_oModel.emplace( m_Space.m_MinX, m_Space.m_MinY, m_Space.m_MaxX, m_Space.m_MaxY );
-      m_oModel->Draw();
-   }
+   //if( m_Space.getHeight() > 0.05f )
+   //{
+   //   m_oModel.emplace( m_Space.m_MinX, m_Space.m_MinY, m_Space.m_MaxX, m_Space.m_MaxY );
+   //   m_oModel->Draw();
+   //}
 
    if( auto pval = std::get_if<Particle*>( &m_Contains ) )
       ( *pval )->Draw();
