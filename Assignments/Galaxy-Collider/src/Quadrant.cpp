@@ -60,11 +60,13 @@ void Quadrant::insert( Particle* particle )
       float r = sqrt( ( particle->m_Pos.x - ( *pval )->m_Pos.x ) * ( particle->m_Pos.x - ( *pval )->m_Pos.x ) +
          ( particle->m_Pos.y - ( *pval )->m_Pos.y ) * ( particle->m_Pos.y - ( *pval )->m_Pos.y ) );
 
-      if( r < GAMMA * 10 )
+      if( r < TOO_CLOSE )
       {
          if( particle->m_Color != ObjectColors::YELLOW )
          {
-            particle->m_Pos = { -1000.0f, -1000.0f };
+            particle->m_Pos = { -10000.0f, -10000.0f };
+            auto myParticle = const_cast<Particle*>( *pval );
+            myParticle->m_Mass += particle->m_Mass / 2.0L;
             particle->m_Mass = 0.0L;
          }
          m_InsertLock.unlock();

@@ -57,7 +57,8 @@ private:
 
 
    static constexpr const float THETA = 0.6f;
-   static constexpr const float GAMMA = 0.000001f;
+   static constexpr const float GAMMA = 0.0000001f;
+   static constexpr const float TOO_CLOSE = 0.00000125f;
 
 
    static glm::vec2 calcAcceleration( const Particle& particle_one, const Particle& particle_two );
