@@ -28,5 +28,6 @@ Windows Systems: The usual MSVC files can be build through the IDE or via comman
 There is no installation of any kind.
 
 ## Sample
-For a quick preview of the the rendering looks like, here's a GIF thats been speed up...
+For a quick preview of what the rendering looks like, here's a GIF thats been speed up...
+
 ![preview](https://github.com/prince-chrismc/Multicore-Programming/blob/master/Docs/20181021_131943_1_1.gif?raw=true)
