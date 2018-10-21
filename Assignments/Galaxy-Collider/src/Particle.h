@@ -39,7 +39,7 @@ public:
    virtual void Draw() const;
 
    glm::vec2 m_Pos;
-   const long double m_Mass;
+   long double m_Mass;
    ObjectColors m_Color;
 
 private:

@@ -88,8 +88,8 @@ int main( int argc, char** argv )
    auto shaderProgram = Shader::Linked::GetInstance();
 
    tbb::concurrent_vector<Particle> universe;
-   auto blackholePrime = Galaxy::Build( universe, ObjectColors::RED, 5.0f, -4.0f, 0.25f, 4000 );
-   auto blackholeSmall = Galaxy::Build( universe, ObjectColors::GREEN, -3.0f, 2.0f, 0.125f, 2500 );
+   auto blackholePrime = Galaxy::Build( universe, ObjectColors::RED, 5.0f, -4.0f, 0.75f, 7500 );
+   auto blackholeSmall = Galaxy::Build( universe, ObjectColors::GREEN, -4.0f, 3.0f, 0.35f, 4000 );
 
    const auto calcForOnStarRange = []( Particle* blackhole ) {
       return [ blackhole ]( Particle* star )
@@ -154,7 +154,7 @@ int main( int argc, char** argv )
       shaderProgram->SetUniformMat4( "view_matrix", camera->GetViewMatrix() );
       shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 
-      Quadrant root( Quadrant::ROOT, -8.0f, -8.0f, 8.0f, 8.0f );
+      Quadrant root( Quadrant::ROOT, -42.0f, -42.0f, 42.0f, 42.0f );
 
       const auto applyForceFilter = [ &root ]( Particle* particle )
       {

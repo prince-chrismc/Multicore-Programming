@@ -60,8 +60,13 @@ void Quadrant::insert( Particle* particle )
       float r = sqrt( ( particle->m_Pos.x - ( *pval )->m_Pos.x ) * ( particle->m_Pos.x - ( *pval )->m_Pos.x ) +
          ( particle->m_Pos.y - ( *pval )->m_Pos.y ) * ( particle->m_Pos.y - ( *pval )->m_Pos.y ) );
 
-      if( r < GAMMA * 100 )
+      if( r < GAMMA * 10 )
       {
+         if( particle->m_Color != ObjectColors::YELLOW )
+         {
+            particle->m_Pos = { -1000.0f, -1000.0f };
+            particle->m_Mass = 0.0L;
+         }
          m_InsertLock.unlock();
          return; // The particle is too close just drop it...
       }
@@ -119,7 +124,7 @@ glm::vec2 Quadrant::calcForce( const Particle& particle ) const
       }
    }
 
-   static constexpr const float MAX_FORCE = 1.8987654f;
+   const float MAX_FORCE = (particle.m_Color == ObjectColors::YELLOW ) ? 0.0856745f : 1.8987654f;
    return glm::vec2
    {
       std::abs( acc.x ) < MAX_FORCE ? acc.x : acc.x > 0 ? MAX_FORCE : 0.0f - MAX_FORCE,
