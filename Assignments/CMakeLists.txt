@@ -54,7 +54,10 @@ elseif(WIN32)
 endif()
 
 # When done tweaking common stuff, configure the components (subprojects).
-set( TBB_BUILD_SHARED OFF )
+set( TBB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set( TBB_BUILD_TBBMALLOC OFF CACHE BOOL "" FORCE)
+set( TBB_BUILD_TBBMALLOC_PROXY OFF CACHE BOOL "" FORCE)
+set( TBB_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 
 # NOTE: The order matters! The most independent ones should go first.
 add_subdirectory(CGL)
