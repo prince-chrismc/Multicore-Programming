@@ -40,8 +40,11 @@ void Quadrant::Draw()
    shaderProgram->SetUniformInt( "object_color", (GLint)ObjectColors::GREY );
    shaderProgram->SetUniformMat4( "model_matrix", glm::mat4( 1.0f ) );
 
-   //m_oModel.emplace( m_Space.m_MinX, m_Space.m_MinY, m_Space.m_MaxX, m_Space.m_MaxY );
-   //m_oModel->Draw();
+   if( m_Space.getHeight() > 0.05f )
+   {
+      m_oModel.emplace( m_Space.m_MinX, m_Space.m_MinY, m_Space.m_MaxX, m_Space.m_MaxY );
+      m_oModel->Draw();
+   }
 
    if( auto pval = std::get_if<Particle*>( &m_Contains ) )
       ( *pval )->Draw();
@@ -74,7 +77,7 @@ void Quadrant::insert( Particle* particle )
       }
 
       std::array<std::unique_ptr<Quadrant>, 4> oChildQuads = m_Space.makeChildDistricts();
-      oChildQuads[ m_Space.determineChildDistrict( (*pval)->m_Pos ) ]->insert( *pval );
+      oChildQuads[ m_Space.determineChildDistrict( ( *pval )->m_Pos ) ]->insert( *pval );
       oChildQuads[ m_Space.determineChildDistrict( particle->m_Pos ) ]->insert( particle );
 
       m_Contains.emplace<std::array<std::unique_ptr<Quadrant>, 4>>( std::move( oChildQuads ) );
@@ -126,7 +129,7 @@ glm::vec2 Quadrant::calcForce( const Particle& particle ) const
       }
    }
 
-   const float MAX_FORCE = (particle.m_Color == ObjectColors::YELLOW ) ? 0.0856745f : 1.8987654f;
+   const float MAX_FORCE = ( particle.m_Color == ObjectColors::YELLOW ) ? 0.0856745f : 1.8987654f;
    return glm::vec2
    {
       std::abs( acc.x ) < MAX_FORCE ? acc.x : acc.x > 0 ? MAX_FORCE : 0.0f - MAX_FORCE,
