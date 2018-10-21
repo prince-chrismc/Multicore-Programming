@@ -27,6 +27,7 @@ SOFTWARE.
 #include "ObjectColors.h"
 #include <vector>
 #include "tbb/task_group.h"
+#include <random>
 
 Quadrant::Quadrant( District disc, float x_min, float y_min, float x_max, float y_max ) :
    m_TotalParticles( 0 ), m_CenterOfMass( 0.0f ), m_Mass( 0.0L ),
@@ -67,10 +68,38 @@ void Quadrant::insert( Particle* particle )
       {
          if( particle->m_Color != ObjectColors::YELLOW )
          {
-            particle->m_Pos = { -1000.0f, -1000.0f };
+
+            static constexpr const long double PI = 3.141592653589793238462643383279502884L;
+
+            std::random_device rd;
+            std::mt19937 gen( rd() );
+            const std::lognormal_distribution<float> numGenPos( 0.0f, 1.8645f );
+
+            const auto angle = static_cast<float>( numGenPos( gen ) * 2.0L * PI );
+            const auto travel = sqrt( numGenPos( gen ) * 1.8987654f );
+
+            // in Cartesian coordinates
+            const float rel_x = travel * cos( angle );
+            const float rel_y = travel * sin( angle );
+
+
+            const float distance = sqrt( rel_x * rel_x + rel_y * rel_y );
+
             auto myParticle = const_cast<Particle*>( *pval );
-            myParticle->m_Mass += particle->m_Mass / 2.0L;
-            particle->m_Mass = 0.0L;
+            if( distance <= 1.8987654f )
+            {
+               particle->m_Pos.x += rel_x;
+               particle->m_Pos.y += rel_y;
+
+               const float force_ratio = distance / 1.8987654f;
+               myParticle->m_Mass += ( particle->m_Mass * force_ratio );
+               particle->m_Mass = particle->m_Mass * ( 1.0f - force_ratio );
+            }
+            else
+            {
+               particle->m_Pos = { -1000.0f, -1000.0f };
+               myParticle->m_Mass += particle->m_Mass / 2.0f;
+            }
          }
          m_InsertLock.unlock();
          return; // The particle is too close just drop it...
