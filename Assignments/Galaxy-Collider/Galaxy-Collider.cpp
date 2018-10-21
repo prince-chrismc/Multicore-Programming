@@ -88,11 +88,11 @@ int main( int argc, char** argv )
    auto shaderProgram = Shader::Linked::GetInstance();
 
    tbb::concurrent_vector<Particle> universe;
-   auto blackholePrime = Galaxy::Build( universe, ObjectColors::RED, 5.0f, -4.0f, 0.75f, 7500 );
-   auto blackholeSmall = Galaxy::Build( universe, ObjectColors::GREEN, -4.0f, 3.0f, 0.35f, 4000 );
+   const auto blackholePrime = Galaxy::Build( universe, ObjectColors::RED, 5.0f, -4.0f, 0.75f, 3500 );
+   const auto blackholeSmall = Galaxy::Build( universe, ObjectColors::GREEN, -4.0f, 3.0f, 0.35f, 800 );
 
-   const auto calcForOnStarRange = []( Particle* blackhole ) {
-      return [ blackhole ]( Particle* star )
+   const auto calcForOnStarRange = []( Particle* blackhole, bool clockwise ) {
+      return [ = ]( Particle* star )
       {
          const float &x1( blackhole->m_Pos.x ), &y1( blackhole->m_Pos.y );
          const long double &m1( blackhole->m_Mass );
@@ -111,15 +111,23 @@ int main( int argc, char** argv )
          const float v = sqrt( Galaxy::GAMMA * m1 / dist );
 
          // Calculate a suitable vector perpendicular to r for the velocity of the tracer
-         star->m_Pos.x += ( r[ 1 ] / dist ) * v;
-         star->m_Pos.y += ( -r[ 0 ] / dist ) * v;
+         if( clockwise )
+         {
+            star->m_Pos.x += ( r[ 1 ] / dist ) * v;
+            star->m_Pos.y += ( -r[ 0 ] / dist ) * v;
+         }
+         else
+         {
+            star->m_Pos.x -= ( r[ 1 ] / dist ) * v;
+            star->m_Pos.y -= ( -r[ 0 ] / dist ) * v;
+         }
       };
    };
 
    const size_t NUM_PARTICLES = universe.size() - 1;
 
-   const auto calcForceAroundPrime = calcForOnStarRange( blackholePrime );
-   const auto clacForceAroundSmall = calcForOnStarRange( blackholeSmall );
+   const auto calcForceAroundPrime = calcForOnStarRange( blackholePrime, false );
+   const auto clacForceAroundSmall = calcForOnStarRange( blackholeSmall, true );
 
    const auto rotateAroundBlackholeFilter = [ calcForceAroundPrime, clacForceAroundSmall ]( Particle* particle )
    {
@@ -209,7 +217,7 @@ int main( int argc, char** argv )
       if( elapsed.count() > 5.0 )
       {
          root.print();
-         std::cout << "FPS: " << frameCounter / static_cast<float>(elapsed.count()) << std::endl;
+         std::cout << "FPS: " << frameCounter / static_cast<float>( elapsed.count() ) << std::endl;
          frameCounter = 0;
          start = std::chrono::high_resolution_clock::now();
       }
