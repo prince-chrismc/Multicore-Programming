@@ -21,10 +21,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+#ifdef _CLANG
+   #define TBB_USE_GLIBCXX_VERSION 60000 // Know TBBB Issue for linux && clang
+#endif
 
 #include "Galaxy.h"
-#include <random>
 #include "tbb/parallel_for.h"
+#include <random>
 
 Blackhole::Blackhole(float x, float y) : Particle( ObjectColors::YELLOW, x, y, 1453.485L )
 {
