@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #pragma once
+#include <chrono>
 
 struct GLFWwindow;
 
@@ -31,8 +32,17 @@ class AppController
 public:
    AppController( int argc, char** argv );
 
-   static void InitOpenGL();
+   void InitOpenGL() const;
+
+   void Start();
+   bool operator++(int);
+
+   void ClearFrame() const;
 
 private:
+   size_t m_FrameCounter;
+   std::chrono::time_point<std::chrono::steady_clock> m_Start;
+
+
    static void key_callback( GLFWwindow* window, int key, int scancode, int action, int mode );
 };

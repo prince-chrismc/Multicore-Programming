@@ -28,6 +28,7 @@ SOFTWARE.
 #include "Linked.h"
 #include "Shaders.h"
 #include <iostream>
+#include "Camera.h"
 
 AppController::AppController( int /*argc*/, char ** argv )
 {
@@ -35,7 +36,7 @@ AppController::AppController( int /*argc*/, char ** argv )
    std::cout << "Welcome to the Galaxy Collider Simulator!" << std::endl;
 }
 
-void AppController::InitOpenGL()
+void AppController::InitOpenGL() const
 {
    // Create a GLFW window
    const auto window = GlfwWindow::CreateInstance( "Galaxy Collider Simulator by Christopher McArthur" );
@@ -50,6 +51,43 @@ void AppController::InitOpenGL()
    Shader::Vertex vertexShader( "../Galaxy-Collider/shaders/vertex.shader" );
    Shader::Fragment fragmentShader( "../Galaxy-Collider/shaders/fragment.shader" );
    Shader::Linked::GetInstance()->Init( &vertexShader, &fragmentShader );
+}
+
+void AppController::Start()
+{
+   m_FrameCounter = 0;
+   m_Start = std::chrono::high_resolution_clock::now();
+}
+
+bool AppController::operator++(int)
+{
+   GlfwWindow::GetInstance()->NextBuffer();
+
+   m_FrameCounter++;
+   auto elapsed = std::chrono::duration_cast<std::chrono::seconds>( std::chrono::high_resolution_clock::now() - m_Start );
+
+   if( elapsed.count() > 5.0 )
+   {
+      std::cout << "FPS: " << m_FrameCounter / static_cast<float>( elapsed.count() ) << std::endl;
+      Start();
+      return true;
+   }
+
+   return false;
+}
+
+void AppController::ClearFrame() const
+{
+   auto window = GlfwWindow::GetInstance();
+   window->TriggerCallbacks();
+
+   // Clear the colorbuffer
+   glClearColor( 0.05f, 0.075f, 0.075f, 1.0f ); // near black teal
+   glClear( GL_COLOR_BUFFER_BIT );
+
+   const auto shaderProgram = Shader::Linked::GetInstance();
+   shaderProgram->SetUniformMat4( "view_matrix", Camera::GetInstance()->GetViewMatrix() );
+   shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
 }
 
 //

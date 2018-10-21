@@ -26,9 +26,7 @@ SOFTWARE.
 
 #include <GL/glew.h>
 #include "Singleton.h"
-#include "Linked.h"
 #include "AppController.h"
-#include "Camera.h"
 
 #include "Galaxy.h"
 #include "Quadrant.h"
@@ -37,7 +35,6 @@ SOFTWARE.
 #include "tbb/task_scheduler_init.h"
 
 #include <iostream>
-#include <chrono>
 
 
 int main( int argc, char** argv )
@@ -46,7 +43,7 @@ int main( int argc, char** argv )
 
    try
    {
-      AppController::InitOpenGL();
+      oController.InitOpenGL();
    }
    catch( const std::exception& e )
    {
@@ -60,11 +57,11 @@ int main( int argc, char** argv )
    const auto blackholeSmall = Galaxy::Build( universe, ObjectColors::GREEN, -4.0f, 3.0f, 0.35f, 800 );
    const size_t NUM_PARTICLES = universe.size() - 1;
 
-   const auto calcForceAroundPrime = Galaxy::GenerateRotationAlgorithm( blackholePrime, false );
-   const auto clacForceAroundSmall = Galaxy::GenerateRotationAlgorithm( blackholeSmall, true );
-
-   const auto rotateAroundBlackholeFilter = [ calcForceAroundPrime, clacForceAroundSmall ]( Particle* particle )
+   const auto rotateAroundBlackholeFilter = [ blackholePrime, blackholeSmall ]( Particle* particle )
    {
+      const auto calcForceAroundPrime = Galaxy::GenerateRotationAlgorithm( blackholePrime, false );
+      const auto clacForceAroundSmall = Galaxy::GenerateRotationAlgorithm( blackholeSmall, true );
+
       // TO DO : Instead of deciding by color pick the closest one!
       switch( particle->m_Color )
       {
@@ -94,43 +91,25 @@ int main( int argc, char** argv )
    //
    // Render Loop
    //
-   size_t frameCounter = 0;
-   auto start = std::chrono::high_resolution_clock::now();
+   oController.Start();
 
-   auto window = GlfwWindow::GetInstance();
-   const auto shaderProgram = Shader::Linked::GetInstance();
+   const auto window = GlfwWindow::GetInstance();
 
    while( !window->ShouldClose() )
    {
-      window->TriggerCallbacks();
-
-      // Clear the colorbuffer
-      glClearColor( 0.05f, 0.075f, 0.075f, 1.0f ); // near black teal
-      glClear( GL_COLOR_BUFFER_BIT );
-
-      shaderProgram->SetUniformMat4( "view_matrix", Camera::GetInstance()->GetViewMatrix() );
-      shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
+      oController.ClearFrame();
 
       Quadrant root( Quadrant::ROOT, -42.0f, -42.0f, 42.0f, 42.0f );
       applyFilterOnUniverse( [ &root ]( Particle* particle ) { root.insert( particle ); } );
 
       root.Draw();
-      window->NextBuffer();
 
       root.calcMassDistribution();
       applyFilterOnUniverse( rotateAroundBlackholeFilter );
       applyFilterOnUniverse( [ &root ]( Particle* particle ) { particle->m_Pos += root.calcForce( *particle ); } );
 
-      frameCounter++;
-      auto elapsed = std::chrono::duration_cast<std::chrono::seconds>( std::chrono::high_resolution_clock::now() - start );
-
-      if( elapsed.count() > 5.0 )
-      {
+      if( oController++ )
          root.print();
-         std::cout << "FPS: " << frameCounter / static_cast<float>( elapsed.count() ) << std::endl;
-         frameCounter = 0;
-         start = std::chrono::high_resolution_clock::now();
-      }
    }
 
    return 0;
