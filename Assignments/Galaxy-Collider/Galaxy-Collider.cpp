@@ -39,7 +39,7 @@ SOFTWARE.
 
 int main( int argc, char** argv )
 {
-   AppController oController( argc, argv );
+   AppController oController;
 
    try
    {
@@ -92,10 +92,7 @@ int main( int argc, char** argv )
    // Render Loop
    //
    oController.Start();
-
-   const auto window = GlfwWindow::GetInstance();
-
-   while( !window->ShouldClose() )
+   while( oController.IsRunning() )
    {
       oController.ClearFrame();
 

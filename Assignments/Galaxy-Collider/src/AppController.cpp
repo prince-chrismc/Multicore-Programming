@@ -30,10 +30,9 @@ SOFTWARE.
 #include <iostream>
 #include "Camera.h"
 
-AppController::AppController( int /*argc*/, char ** argv )
+AppController::AppController()
 {
-   std::cout << argv[ 0 ] << std::endl;
-   std::cout << "Welcome to the Galaxy Collider Simulator!" << std::endl;
+   std::cout << "Welcome to the Galaxy Collider Simulator!" << std::endl << std::endl;
 }
 
 void AppController::InitOpenGL() const
@@ -68,7 +67,7 @@ bool AppController::operator++(int)
 
    if( elapsed.count() > 5.0 )
    {
-      std::cout << "FPS: " << m_FrameCounter / static_cast<float>( elapsed.count() ) << std::endl;
+      std::cout << "FPS: " << m_FrameCounter / static_cast<float>( elapsed.count() ) << " // ";
       Start();
       return true;
    }
@@ -88,6 +87,11 @@ void AppController::ClearFrame() const
    const auto shaderProgram = Shader::Linked::GetInstance();
    shaderProgram->SetUniformMat4( "view_matrix", Camera::GetInstance()->GetViewMatrix() );
    shaderProgram->SetUniformMat4( "projection_matrix", window->GetProjectionMatrix() );
+}
+
+bool AppController::IsRunning() const
+{
+   return !GlfwWindow::GetInstance()->ShouldClose();
 }
 
 //

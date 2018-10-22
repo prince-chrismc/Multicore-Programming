@@ -30,7 +30,7 @@ struct GLFWwindow;
 class AppController
 {
 public:
-   AppController( int argc, char** argv );
+   AppController();
 
    void InitOpenGL() const;
 
@@ -38,6 +38,8 @@ public:
    bool operator++(int);
 
    void ClearFrame() const;
+
+   bool IsRunning() const;
 
 private:
    size_t m_FrameCounter;
