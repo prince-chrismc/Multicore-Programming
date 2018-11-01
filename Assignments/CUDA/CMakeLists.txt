@@ -62,7 +62,6 @@ if(NOT DEFINED CMAKE_CUDA_STANDARD)
 endif()
 
 find_package(CUDA REQUIRED)
-message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
 # When done tweaking common stuff, configure the components (subprojects).
 
