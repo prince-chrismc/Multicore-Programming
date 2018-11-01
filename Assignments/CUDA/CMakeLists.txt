@@ -70,9 +70,15 @@ message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
 FILE(GLOB CUDA_SOURCE_CODE "src/*")
 
+if( CMAKE_CL_64 )
+    FILE(GLOB CUDA_LIBS "${CUDA_TOOLKIT_ROOT_DIR}/lib/x64/*") # I only need this to work on windows as of now
+elseif()
+    FILE(GLOB CUDA_LIBS "${CUDA_TOOLKIT_ROOT_DIR}/lib/Win32/*")
+endif()
+
 if(UNIX)
 elseif(WIN32)
     ADD_EXECUTABLE(Galaxy-Collider Main.cpp ${CUDA_SOURCE_CODE})
-    TARGET_LINK_LIBRARIES(Galaxy-Collider)
+    TARGET_LINK_LIBRARIES(Galaxy-Collider ${CUDA_LIBS})
     target_include_directories(Galaxy-Collider PRIVATE src ${CUDA_TOOLKIT_ROOT_DIR}/include)
 endif()
