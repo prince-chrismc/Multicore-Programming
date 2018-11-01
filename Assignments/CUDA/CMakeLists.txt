@@ -67,15 +67,12 @@ message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 # When done tweaking common stuff, configure the components (subprojects).
 
 # NOTE: The order matters! The most independent ones should go first.
-add_subdirectory(CGL)
 
 FILE(GLOB CUDA_SOURCE_CODE "src/*")
 
 if(UNIX)
 elseif(WIN32)
-    ADD_EXECUTABLE(Galaxy-Collider main.cpp ${CUDA_SOURCE_CODE})
-    TARGET_LINK_LIBRARIES(Galaxy-Collider cg-lib)
+    ADD_EXECUTABLE(Galaxy-Collider Main.cpp ${CUDA_SOURCE_CODE})
+    TARGET_LINK_LIBRARIES(Galaxy-Collider)
     target_include_directories(Galaxy-Collider PRIVATE src)
 endif()
-
-set_target_properties(cg-lib PROPERTIES VERSION ${BUILD_VERSION} SOVERSION ${BUILD_MAJOR})
