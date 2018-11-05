@@ -4,4 +4,5 @@ This project contains all the assignments for the class. Instead of making a new
 **Number** | **Name** | **Status**
 :---: | :--- | ---
 1 | Native Threading | Completed
-2 | Intel TBB | _WIP_
+2 | Intel TBB | Completed
+3 | CUDA | Not Required
