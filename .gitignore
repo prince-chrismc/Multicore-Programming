@@ -1,3 +1,6 @@
 Assignments/build/
 Assignments/build-linux/
 Assignments/build-clang/
+
+Assignments/OpenCL/NBody/build*/
+Assignments/OpenCL/NBody/bin/*
