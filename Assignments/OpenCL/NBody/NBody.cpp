@@ -35,26 +35,23 @@ groupSize( GROUP_SIZE )
 
 float NBody::random( float randMax, float randMin )
 {
-   const auto result = (float)rand() / (float)RAND_MAX;
-
+   const auto result = rand() / static_cast<float>( RAND_MAX );
    return ( ( 1.0f - result ) * randMin + result * randMax );
 }
 
 int NBody::setupNBody()
 {
-    // make sure numParticles is multiple of group size
-   numParticles = (cl_uint)( ( (size_t)numParticles < groupSize ) ? groupSize :
-                             numParticles );
-   numParticles = (cl_uint)( ( numParticles / groupSize ) * groupSize );
+   numParticles = max( numParticles, static_cast<cl_uint>( groupSize ) ); // can not have fewer particles then one work group compute elements
+   numParticles = static_cast<cl_uint>( ( numParticles / groupSize ) * groupSize ); // make sure numParticles is multiple of group size
 
-   initPos = (cl_float*)malloc( numParticles * sizeof( cl_float4 ) );
+   initPos = reinterpret_cast<cl_float*>( new cl_float4[ numParticles ] );
    CHECK_ALLOCATION( initPos, "Failed to allocate host memory. (initPos)" );
 
    static constexpr const long double PI = 3.141592653589793238462643383279502884L;
 
    std::random_device rd;
    std::mt19937 gen( rd() );
-   std::lognormal_distribution<double> numGenPos( 0.0, 1.8645 );
+   std::lognormal_distribution<double> numGenPos( 0.0, 3.8645 );
 
     // initialization of inputs
    for( cl_uint i = 0; i < numParticles; ++i )
@@ -73,17 +70,17 @@ int NBody::setupNBody()
       {
          initPos[ index ] = 100 + r * cos( a );
          initPos[ index + 1 ] = 40 + r * sin( a );
-         initPos[ index + 2 ] = random( 109, 50 );
+         initPos[ index + 2 ] = random( 109.0f, 50.0f );
       }
       else
       {
          initPos[ index ] = -25 + r * cos( a );
          initPos[ index + 1 ] = -44 + r * sin( a );
-         initPos[ index + 2 ] = random( 3, 100 );
+         initPos[ index + 2 ] = random( 3.0f, 100.0f );
       }
 
       // Mass valuee
-      initPos[ index + 3 ] = random( 1, 1000 );
+      initPos[ index + 3 ] = random( 1.0f, 1000.0f );
    }
 
    return SDK_SUCCESS;
