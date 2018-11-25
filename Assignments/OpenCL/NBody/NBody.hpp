@@ -46,35 +46,9 @@ public:
    cl_event glEvent;
    cl_bool display;
 
-   /**
-    * Allocate and initialize host memory array with random values
-    * @return SDK_SUCCESS on success and SDK_FAILURE on failure
-    */
-   int setupNBody();
-
-   /**
-   * OpenCL related initialization.
-   * Set up Context, Device list, Command Queue, Memory buffers
-   * Build CL kernel program executable
-   * @return SDK_SUCCESS on success and SDK_FAILURE on failure
-   */
-   int setupCL();
-
-   /**
-   * Set values for kernels' arguments
-   * @return SDK_SUCCESS on success and SDK_FAILURE on failure
-   */
-   int setupCLKernels() const;
-
-
    // calculate FPS
    double getFPS();
    //--------------------------------------------------------------------------------
-
-   /**
-   * Override from SDKSample. Print sample stats.
-   */
-   void printStats() const;
 
    /**
    * Override from SDKSample, adjust width and height
@@ -82,13 +56,6 @@ public:
    * @return SDK_SUCCESS on success and SDK_FAILURE on failure
    */
    int setup();
-
-   /**
-   * Override from SDKSample
-   * Run OpenCL NBody
-   * @return SDK_SUCCESS on success and SDK_FAILURE on failure
-   */
-   int run();
 
    /**
    * Enqueue calls to the kernels
@@ -111,9 +78,6 @@ public:
 private:
    CLCommandArgs sampleArgs;   /**< CLCommand argument class */
 
-   cl_double setupTime = 0;            /**< time taken to setup OpenCL resources and building kernel */
-   cl_double kernelTime = 0;           /**< time taken to run kernel and read result back */
-
    cl_float delT = 0.005f;             /**< dT (timestep) */
    cl_float espSqr = 500.0f;           /**< Softening Factor*/
    cl_float* initPos;                  /**< initial position */
@@ -131,7 +95,6 @@ private:
    cl_kernel kernel{};                 /**< CL kernel */
    size_t groupSize;                   /**< Work-Group size */
 
-   int iterations = 1;
    SDKDeviceInfo deviceInfo;           /**< Structure to store device information*/
    KernelWorkGroupInfo kernelInfo;     /**< Structure to store kernel related info */
 
@@ -149,6 +112,27 @@ private:
    * @return SDK_SUCCESS on success and SDK_FAILURE on failure
    */
    int initialize();
+
+   /**
+   * OpenCL related initialization.
+   * Set up Context, Device list, Command Queue, Memory buffers
+   * Build CL kernel program executable
+   * @return SDK_SUCCESS on success and SDK_FAILURE on failure
+   */
+   int setupCL();
+
+   /**
+    * Allocate and initialize host memory array with random values
+    * @return SDK_SUCCESS on success and SDK_FAILURE on failure
+    */
+   int setupNBody();
+
+
+   /**
+   * Set values for kernels' arguments
+   * @return SDK_SUCCESS on success and SDK_FAILURE on failure
+   */
+   int setupCLKernels() const;
 };
 
 #endif // NBODY_H_

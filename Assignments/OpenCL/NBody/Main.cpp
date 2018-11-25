@@ -45,11 +45,6 @@ int main( int argc, char** argv )
    status = clNBody.setup();
    CHECK_ERROR( status, SDK_SUCCESS, "Failed to setup NBody" );
 
-   status = clNBody.run();
-   CHECK_ERROR( status, SDK_SUCCESS, "Sample Run Program Failed" );
-
-   clNBody.printStats();
-
    if( clNBody.display )
    {
        // Run in  graphical window if requested

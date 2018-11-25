@@ -22,8 +22,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 cl_float* pos;      /**< Output position */
 
-NBody::NBody() : isFirstLuanch( true ), glEvent(nullptr ), display( false ), sampleArgs( true ),
-initPos(nullptr ), initVel(nullptr ), vel(nullptr ), devices(nullptr ), mappedPosBuffer(nullptr ),
+NBody::NBody() : isFirstLuanch( true ), glEvent( nullptr ), display( true ), sampleArgs( true ),
+initPos( nullptr ), initVel( nullptr ), vel( nullptr ), devices( nullptr ), mappedPosBuffer( nullptr ),
 groupSize( GROUP_SIZE )
 {
    sampleTimer = new SDKTimer();
@@ -288,8 +288,7 @@ int NBody::initialize()
    }
 
    Option *num_particles = new Option;
-   CHECK_ALLOCATION( num_particles,
-                     "error. Failed to allocate memory (num_particles)\n" );
+   CHECK_ALLOCATION( num_particles, "error. Failed to allocate memory (num_particles)\n" );
 
    num_particles->_sVersion = "x";
    num_particles->_lVersion = "particles";
@@ -300,89 +299,18 @@ int NBody::initialize()
    sampleArgs.AddOption( num_particles );
    delete num_particles;
 
-   Option *num_iterations = new Option;
-   CHECK_ALLOCATION( num_iterations,
-                     "error. Failed to allocate memory (num_iterations)\n" );
-
-   num_iterations->_sVersion = "i";
-   num_iterations->_lVersion = "iterations";
-   num_iterations->_description = "Number of iterations";
-   num_iterations->_type = CA_ARG_INT;
-   num_iterations->_value = &iterations;
-
-   sampleArgs.AddOption( num_iterations );
-   delete num_iterations;
-
-   Option *display_option = new Option;
-   CHECK_ALLOCATION( display_option,
-                     "error. Failed to allocate memory (num_iterations)\n" );
-
-   display_option->_sVersion = "g";
-   display_option->_lVersion = "gui";
-   display_option->_description = "Enable graphical display";
-   display_option->_type = CA_NO_ARGUMENT;
-   display_option->_value = &display;
-
-   sampleArgs.AddOption( display_option );
-   delete display_option;
-
    return SDK_SUCCESS;
 }
 
 int NBody::setup()
 {
-   int status = 0;
-   if( setupNBody() != SDK_SUCCESS )
-   {
-      return SDK_FAILURE;
-   }
+   fpsTimer = sampleTimer->createTimer();
+   sampleTimer->resetTimer( fpsTimer );
+   sampleTimer->startTimer( fpsTimer );
 
-   int timer = sampleTimer->createTimer();
-   sampleTimer->resetTimer( timer );
-   sampleTimer->startTimer( timer );
-
-   status = setupCL();
-   if( status != SDK_SUCCESS )
-   {
-      return SDK_FAILURE;
-   }
-
-   sampleTimer->stopTimer( timer );
-   // Compute setup time
-   setupTime = (double)( sampleTimer->readTimer( timer ) );
-
-   return SDK_SUCCESS;
-}
-
-int NBody::run()
-{
-   int status = 0;
-   // Arguments are set and execution call is enqueued on command buffer
-   if( setupCLKernels() != SDK_SUCCESS )
-   {
-      return SDK_FAILURE;
-   }
-
-   if( sampleArgs.verify || sampleArgs.timing )
-   {
-      int timer = sampleTimer->createTimer();
-      sampleTimer->resetTimer( timer );
-      sampleTimer->startTimer( timer );
-
-      for( int i = 0; i < iterations; ++i )
-      {
-         if( runCLKernels() != SDK_SUCCESS )
-         {
-            return SDK_FAILURE;
-         }
-      }
-
-      status = clFinish( this->commandQueue );
-      sampleTimer->stopTimer( timer );
-      // Compute kernel time
-      kernelTime = (double)( sampleTimer->readTimer( timer ) ) / iterations;
-
-   }
+   CHECK_ERROR( setupNBody(), SDK_SUCCESS, "Failed to setup NBody" );
+   CHECK_ERROR( setupCL(), SDK_SUCCESS, "Failed to setup NBody OpenCL" );
+   CHECK_ERROR( setupCLKernels(), SDK_SUCCESS, "Failed to setup NBody OpenCl kernels" );
    return SDK_SUCCESS;
 }
 
@@ -397,34 +325,9 @@ double NBody::getFPS()
    return fps;
 }
 
-void NBody::printStats() const
-{
-   if( sampleArgs.timing )
-   {
-      std::string strArray[ 4 ] =
-      {
-          "Particles",
-          "Iterations",
-          "Kernel Time(sec)",
-          "GFLOPS"
-      };
-
-      std::string stats[ 4 ];
-
-      double GFLOPs = ( (double)( (double)( KERNEL_FLOPS * numParticles ) )*numParticles*powf( 10, -9 ) ) / kernelTime;
-
-      stats[ 0 ] = toString( numParticles, std::dec );
-      stats[ 1 ] = toString( iterations, std::dec );
-      stats[ 2 ] = toString( kernelTime, std::dec );
-      stats[ 3 ] = toString( GFLOPs, std::dec );
-
-      printStatistics( strArray, stats, 4 );
-   }
-}
-
 int NBody::cleanup()
 {
-   cl_int status = clReleaseKernel(kernel);
+   cl_int status = clReleaseKernel( kernel );
    CHECK_OPENCL_ERROR( status, "clReleaseKernel failed.(kernel)" );
 
    status = clReleaseProgram( program );
@@ -473,7 +376,7 @@ NBody::~NBody()
    FREE( devices );
 }
 
-int NBody::parseCommandLine(int argc, char** argv)
+int NBody::parseCommandLine( int argc, char** argv )
 {
    return sampleArgs.parseCommandLine( argc, argv );
 }
