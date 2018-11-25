@@ -39,32 +39,17 @@ int main( int argc, char** argv )
    NBody clNBody;
    nb = &clNBody;
 
-   if( clNBody.initialize() != SDK_SUCCESS )
-   {
-      return SDK_FAILURE;
-   }
+   int status = clNBody.initialize();
+   CHECK_ERROR( status, SDK_SUCCESS, "Failed to init NBody" );
 
-   if( clNBody.sampleArgs->parseCommandLine( argc, argv ) != SDK_SUCCESS )
-   {
-      return SDK_FAILURE;
-   }
+   status = clNBody.sampleArgs->parseCommandLine( argc, argv );
+   CHECK_ERROR( status, SDK_SUCCESS, "Failed to parse CLI agrs" );
 
-   if( clNBody.sampleArgs->isDumpBinaryEnabled() )
-   {
-      return clNBody.genBinaryImage();
-   }
-
-   int status = clNBody.setup();
-   if( status != SDK_SUCCESS )
-   {
-      return SDK_FAILURE;
-   }
+   status = clNBody.setup();
+   CHECK_ERROR( status, SDK_SUCCESS, "Failed to setup NBody" );
 
    status = clNBody.run();
    CHECK_ERROR( status, SDK_SUCCESS, "Sample Run Program Failed" );
-
-   status = clNBody.verifyResults();
-   CHECK_ERROR( status, SDK_SUCCESS, "Sample Verify Results Failed" );
 
    clNBody.printStats();
 

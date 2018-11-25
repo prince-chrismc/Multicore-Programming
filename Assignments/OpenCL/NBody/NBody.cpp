@@ -31,7 +31,7 @@ isFirstLuanch( true ), glEvent( NULL ), display( false )
    sampleArgs = new CLCommandArgs();
    sampleTimer = new SDKTimer();
    sampleArgs->sampleVerStr = SAMPLE_VERSION;
-   numParticles = 1024;
+   numParticles = 4096;
 }
 
 float NBody::random( float randMax, float randMin )
@@ -235,8 +235,6 @@ int NBody::setupCLKernels() const
 
 int NBody::runCLKernels()
 {
-   cl_int status;
-
    int currentBuffer = currentPosBufferIndex;
    int nextBuffer = ( currentPosBufferIndex + 1 ) % 2;
 
@@ -247,27 +245,22 @@ int NBody::runCLKernels()
    size_t localThreads[] = { groupSize };
 
    // Particle positions
-   status = clSetKernelArg( kernel, 0, sizeof( cl_mem ),
-      (void*)( particlePos + currentBuffer ) );
+   cl_int status = clSetKernelArg( kernel, 0, sizeof( cl_mem ), (void*)( particlePos + currentBuffer ) );
    CHECK_OPENCL_ERROR( status, "clSetKernelArg failed. (updatedPos)" );
 
    // Particle velocity
-   status = clSetKernelArg( kernel, 1, sizeof( cl_mem ),
-      (void *)( particleVel + currentBuffer ) );
+   status = clSetKernelArg( kernel, 1, sizeof( cl_mem ), (void *)( particleVel + currentBuffer ) );
    CHECK_OPENCL_ERROR( status, "clSetKernelArg failed. (updatedVel)" );
 
    // Particle positions
-   status = clSetKernelArg( kernel, 5, sizeof( cl_mem ),
-      (void*)( particlePos + nextBuffer ) );
+   status = clSetKernelArg( kernel, 5, sizeof( cl_mem ), (void*)( particlePos + nextBuffer ) );
    CHECK_OPENCL_ERROR( status, "clSetKernelArg failed. (unewPos)" );
 
    // Particle velocity
-   status = clSetKernelArg( kernel, 6, sizeof( cl_mem ),
-      (void*)( particleVel + nextBuffer ) );
+   status = clSetKernelArg( kernel, 6, sizeof( cl_mem ), (void*)( particleVel + nextBuffer ) );
    CHECK_OPENCL_ERROR( status, "clSetKernelArg failed. (newVel)" );
 
-   status = clEnqueueNDRangeKernel( commandQueue, kernel, 1, NULL, globalThreads,
-                                    localThreads, 0, NULL, NULL );
+   status = clEnqueueNDRangeKernel( commandQueue, kernel, 1, NULL, globalThreads, localThreads, 0, NULL, NULL );
    CHECK_OPENCL_ERROR( status, "clEnqueueNDRangeKernel failed." );
 
    status = clFlush( commandQueue );
@@ -275,6 +268,7 @@ int NBody::runCLKernels()
 
    currentPosBufferIndex = nextBuffer;
    timerNumFrames++;
+
    return SDK_SUCCESS;
 }
 
