@@ -1,10 +1,10 @@
 /**********************************************************************
-Copyright ©2015 Advanced Micro Devices, Inc. All rights reserved.
+Copyright ï¿½2015 Advanced Micro Devices, Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
-•   Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-•   Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or
+ï¿½   Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ï¿½   Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or
  other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -19,14 +19,15 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <GL/glut.h>
 #include <cmath>
 #include <malloc.h>
+#include <random>
+
 
 cl_uint numBodies;      /**< No. of particles*/
 cl_float* pos;      /**< Output position */
 void* me;           /**< Pointing to NBody class */
 
 
-float
-NBody::random(float randMax, float randMin)
+float NBody::random(float randMax, float randMin)
 {
     float result;
     result =(float)rand() / (float)RAND_MAX;
@@ -34,8 +35,7 @@ NBody::random(float randMax, float randMin)
     return ((1.0f - result) * randMin + result *randMax);
 }
 
-int
-NBody::setupNBody()
+int NBody::setupNBody()
 {
     // make sure numParticles is multiple of group size
     numParticles = (cl_uint)(((size_t)numParticles < groupSize) ? groupSize :
@@ -46,21 +46,45 @@ NBody::setupNBody()
 
     initPos = (cl_float*)malloc(numBodies * sizeof(cl_float4));
     CHECK_ALLOCATION(initPos, "Failed to allocate host memory. (initPos)");
+    
+       static constexpr const long double PI = 3.141592653589793238462643383279502884L;
+
+   std::random_device rd;
+   std::mt19937 gen( rd() );
+   std::lognormal_distribution<double> numGenPos( 0.0, 1.8645 );
+   std::lognormal_distribution<float> numGenMass( 0.0f, 1.0f );
 
     // initialization of inputs
     for(cl_uint i = 0; i < numBodies; ++i)
     {
         int index = 4 * i;
+        const auto a = static_cast<float>( numGenPos( gen ) * 2.0L * PI );
+        const auto r = static_cast<float>( sqrt( numGenPos( gen ) * 35.0 ) );
+
+        // in Cartesian coordinates
+        const float rel_x = r * cos( a );
+        const float rel_y = r * sin( a );
 
         // First 3 values are position in x,y and z direction
-        for(int j = 0; j < 3; ++j)
+        //for(int j = 0; j < 3; ++j)
+        if(i < numBodies/2.75)
         {
-            initPos[index + j] = random(3, 50);
+            initPos[index] = 100 + r * cos( a );
+            initPos[index + 1] = 40 + r * sin( a );
+            initPos[index + 2] = random(3, 100);
+        }
+        else
+        {
+            initPos[index] = -25 + r * cos( a );
+            initPos[index + 1] = -44 + r * sin( a );
+            initPos[index + 2] = random(3, 100);
         }
 
-        // Mass value
+        // Mass valuee
         initPos[index + 3] = random(1, 1000);
     }
+
+
     return SDK_SUCCESS;
 }
 
