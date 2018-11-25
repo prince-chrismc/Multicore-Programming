@@ -20,8 +20,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <malloc.h>
 #include <random>
 
-cl_float* pos;      /**< Output position */
-
 NBody::NBody() : isFirstLuanch( true ), glEvent( nullptr ), display( true ), sampleArgs( true ),
 initPos( nullptr ), initVel( nullptr ), vel( nullptr ), devices( nullptr ), mappedPosBuffer( nullptr ),
 groupSize( GROUP_SIZE )
@@ -51,7 +49,7 @@ int NBody::setupNBody()
 
    std::random_device rd;
    std::mt19937 gen( rd() );
-   std::lognormal_distribution<double> numGenPos( 0.0, 3.8645 );
+   const std::lognormal_distribution<double> numGenPos( 0.0, 3.8645 );
 
     // initialization of inputs
    for( cl_uint i = 0; i < numParticles; ++i )
@@ -59,10 +57,6 @@ int NBody::setupNBody()
       const int index = 4 * i;
       const auto a = static_cast<float>( numGenPos( gen ) * 2.0L * PI );
       const auto r = static_cast<float>( sqrt( numGenPos( gen ) * 35.0 ) );
-
-      // in Cartesian coordinates
-      const float rel_x = r * cos( a );
-      const float rel_y = r * sin( a );
 
       // First 3 values are position in x,y and z direction
       //for(int j = 0; j < 3; ++j)
@@ -125,7 +119,7 @@ int NBody::setupCL()
    /*
     * If we could find our platform, use it. Otherwise use just available platform.
     */
-   cl_context_properties cps[ 3 ] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 0 };
+   cl_context_properties cps[ 3 ] = { CL_CONTEXT_PLATFORM, reinterpret_cast<cl_context_properties>( platform ), 0 };
    context = clCreateContextFromType( cps, dType, nullptr, nullptr, &status );
    CHECK_OPENCL_ERROR( status, "clCreateContextFromType failed." );
 
@@ -161,7 +155,8 @@ int NBody::setupCL()
    CHECK_OPENCL_ERROR( status, "clEnqueueWriteBuffer failed. " );
 
    // Initialize the velocity buffer to zero
-   float* p = (float*)clEnqueueMapBuffer( commandQueue, particleVel[ 0 ], CL_TRUE, CL_MAP_WRITE, 0, bufferSize, 0, nullptr, nullptr, &status );
+   const auto p = static_cast<float*>( clEnqueueMapBuffer( commandQueue, particleVel[ 0 ], CL_TRUE, CL_MAP_WRITE, 0, bufferSize, 0,
+                                       nullptr, nullptr, &status ) );
    CHECK_OPENCL_ERROR( status, "clEnqueueMapBuffer failed. " );
    memset( p, 0, bufferSize );
    status = clEnqueueUnmapMemObject( commandQueue, particleVel[ 0 ], p, 0, nullptr, nullptr );
@@ -259,8 +254,8 @@ float* NBody::getMappedParticlePositions()
 {
    cl_int status;
    mappedPosBufferIndex = currentPosBufferIndex;
-   mappedPosBuffer = (float*)clEnqueueMapBuffer( commandQueue, particlePos[ mappedPosBufferIndex ], CL_TRUE, CL_MAP_READ
-                                                 , 0, numParticles * 4 * sizeof( float ), 0, nullptr, nullptr, &status );
+   mappedPosBuffer = static_cast<float*>( clEnqueueMapBuffer( commandQueue, particlePos[ mappedPosBufferIndex ], CL_TRUE, CL_MAP_READ,
+                                          0, numParticles * 4 * sizeof( float ), 0, nullptr, nullptr, &status ) );
    return mappedPosBuffer;
 }
 
@@ -268,7 +263,7 @@ void NBody::releaseMappedParticlePositions()
 {
    if( mappedPosBuffer )
    {
-      cl_int status = clEnqueueUnmapMemObject( commandQueue, particlePos[ mappedPosBufferIndex ], mappedPosBuffer, 0, nullptr, nullptr );
+      clEnqueueUnmapMemObject( commandQueue, particlePos[ mappedPosBufferIndex ], mappedPosBuffer, 0, nullptr, nullptr );
       mappedPosBuffer = nullptr;
       clFlush( commandQueue );
    }
@@ -277,7 +272,6 @@ void NBody::releaseMappedParticlePositions()
 int NBody::initialize()
 {
     // Call base class Initialize to get default configuration
-   int status = 0;
    if( sampleArgs.initialize() != SDK_SUCCESS )
    {
       return SDK_FAILURE;
@@ -346,12 +340,6 @@ NBody::~NBody()
    FREE( initPos );
 
    FREE( initVel );
-
-#if defined (_WIN32)
-   ALIGNED_FREE( pos );
-#else
-   FREE( pos );
-#endif
 
 #if defined (_WIN32)
    ALIGNED_FREE( vel );
