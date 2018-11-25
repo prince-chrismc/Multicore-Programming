@@ -16,8 +16,8 @@
 
 
 set( SAMPLE_NAME NBody )
-set( SOURCE_FILES NBody.cpp )
-set( EXTRA_FILES NBody_Kernels.cl )
+set( SOURCE_FILES NBody.cpp Main.cpp)
+set( EXTRA_FILES NBody_Kernels.cl CMakeLists.txt)
 
 ############################################################################
 

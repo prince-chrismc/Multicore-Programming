@@ -16,17 +16,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 #include "NBody.hpp"
-#include <GL/glut.h>
 #include <cmath>
 #include <malloc.h>
 #include <random>
 #include <functional>
 
 
-cl_uint numBodies;      /**< No. of particles*/
 cl_float* pos;      /**< Output position */
-void* me;           /**< Pointing to NBody class */
-
 
 NBody::NBody() : setupTime( 0 ), kernelTime( 0 ), delT( 0.005f ), espSqr( 500.0f ), initPos( NULL ), initVel( NULL ), vel( NULL ), devices( NULL ),
 currentPosBufferIndex( 0 ), mappedPosBuffer( NULL ), groupSize( GROUP_SIZE ), iterations( 1 ), fpsTimer( 0 ), timerNumFrames( 0 ),
@@ -52,9 +48,7 @@ int NBody::setupNBody()
                              numParticles );
    numParticles = (cl_uint)( ( numParticles / groupSize ) * groupSize );
 
-   numBodies = numParticles;
-
-   initPos = (cl_float*)malloc( numBodies * sizeof( cl_float4 ) );
+   initPos = (cl_float*)malloc( numParticles * sizeof( cl_float4 ) );
    CHECK_ALLOCATION( initPos, "Failed to allocate host memory. (initPos)" );
 
    static constexpr const long double PI = 3.141592653589793238462643383279502884L;
@@ -62,12 +56,11 @@ int NBody::setupNBody()
    std::random_device rd;
    std::mt19937 gen( rd() );
    std::lognormal_distribution<double> numGenPos( 0.0, 1.8645 );
-   std::lognormal_distribution<float> numGenMass( 0.0f, 1.0f );
 
     // initialization of inputs
-   for( cl_uint i = 0; i < numBodies; ++i )
+   for( cl_uint i = 0; i < numParticles; ++i )
    {
-      int index = 4 * i;
+      const int index = 4 * i;
       const auto a = static_cast<float>( numGenPos( gen ) * 2.0L * PI );
       const auto r = static_cast<float>( sqrt( numGenPos( gen ) * 35.0 ) );
 
@@ -77,7 +70,7 @@ int NBody::setupNBody()
 
       // First 3 values are position in x,y and z direction
       //for(int j = 0; j < 3; ++j)
-      if( i < numBodies / 2.75 )
+      if( i < numParticles / 2.75 )
       {
          initPos[ index ] = 100 + r * cos( a );
          initPos[ index + 1 ] = 40 + r * sin( a );
@@ -171,7 +164,7 @@ int NBody::setupCL()
    /*
    * Create and initialize memory objects
    */
-   const size_t bufferSize = numBodies * sizeof( cl_float4 );
+   const size_t bufferSize = numParticles * sizeof( cl_float4 );
    for( int i = 0; i < 2; i++ )
    {
       particlePos[ i ] = clCreateBuffer( context, CL_MEM_READ_WRITE, bufferSize, nullptr, &status );
@@ -224,9 +217,9 @@ int NBody::setupCL()
 // Set appropriate arguments to the kernel
 int NBody::setupCLKernels() const
 {
-   // numBodies
-   cl_int status = clSetKernelArg( kernel, 2, sizeof( cl_uint ), &numBodies );
-   CHECK_OPENCL_ERROR( status, "clSetKernelArg failed. (numBodies)" );
+   // numParticles
+   cl_int status = clSetKernelArg( kernel, 2, sizeof( cl_uint ), &numParticles );
+   CHECK_OPENCL_ERROR( status, "clSetKernelArg failed. (numParticles)" );
 
    // time step
    status = clSetKernelArg( kernel, 3, sizeof( cl_float ), &delT );
@@ -250,7 +243,7 @@ int NBody::runCLKernels()
    /*
    * Enqueue a kernel run call.
    */
-   size_t globalThreads[] = { numBodies };
+   size_t globalThreads[] = { numParticles };
    size_t localThreads[] = { groupSize };
 
    // Particle positions
@@ -291,7 +284,7 @@ float* NBody::getMappedParticlePositions()
    mappedPosBufferIndex = currentPosBufferIndex;
    mappedPosBuffer = (float*)clEnqueueMapBuffer( commandQueue,
                                                  particlePos[ mappedPosBufferIndex ], CL_TRUE, CL_MAP_READ
-                                                 , 0, numBodies * 4 * sizeof( float ), 0, NULL, NULL, &status );
+                                                 , 0, numParticles * 4 * sizeof( float ), 0, NULL, NULL, &status );
    return mappedPosBuffer;
 }
 
@@ -312,11 +305,11 @@ void NBody::releaseMappedParticlePositions()
 void NBody::nBodyCPUReference( float* currentPos, float* currentVel, float* newPos, float* newVel ) const
 {
     //Iterate for all samples
-   for( cl_uint i = 0; i < numBodies; ++i )
+   for( cl_uint i = 0; i < numParticles; ++i )
    {
       int myIndex = 4 * i;
       float acc[ 3 ] = { 0.0f, 0.0f, 0.0f };
-      for( cl_uint j = 0; j < numBodies; ++j )
+      for( cl_uint j = 0; j < numParticles; ++j )
       {
          float r[ 3 ];
          int index = 4 * j;
@@ -425,125 +418,6 @@ int NBody::setup()
    return SDK_SUCCESS;
 }
 
-/**
-* @brief Initialize GL
-*/
-void GLInit()
-{
-   glClearColor( 0.0, 0.0, 0.0, 0.0 );
-   glClear( GL_COLOR_BUFFER_BIT );
-   glClear( GL_DEPTH_BUFFER_BIT );
-   glMatrixMode( GL_PROJECTION );
-   glLoadIdentity();
-}
-
-/**
-* @brief Glut Idle function
-*/
-void idle()
-{
-   glutPostRedisplay();
-}
-
-/**
-* @brief Glut reshape func
-*
-* @param w numParticles of OpenGL window
-* @param h height of OpenGL window
-*/
-void reShape( int w, int h )
-{
-   glViewport( 0, 0, w, h );
-
-   glViewport( 0, 0, w, h );
-   glMatrixMode( GL_MODELVIEW );
-   glLoadIdentity();
-   gluPerspective( 45.0f, w / h, 1.0f, 1000.0f );
-   gluLookAt( 0.0, 0.0, -2.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0 );
-}
-
-/**
-* @brief OpenGL display function
-*/
-void displayfunc( NBody *nb )
-{
-   static int numFrames = 0;
-
-   glClearColor( 0.0, 0.0, 0.0, 0.0 );
-   glClear( GL_COLOR_BUFFER_BIT );
-   glClear( GL_DEPTH_BUFFER_BIT );
-
-   glPointSize( 1.0 );
-   glBlendFunc( GL_SRC_ALPHA, GL_ONE );
-   glEnable( GL_BLEND );
-   glDepthMask( GL_FALSE );
-
-   glColor3f( 1.0f, 0.5f, 0.5f );
-
-   if( nb->isFirstLuanch )
-   {
-       //Calling kernel for calculatig subsequent positions
-      nb->runCLKernels();
-      nb->isFirstLuanch = false;
-      return;
-   }
-
-
-   cl_uint numBodies = nb->numParticles;
-   float* pos = nb->getMappedParticlePositions();
-   nb->runCLKernels();
-   glBegin( GL_POINTS );
-   for( cl_uint i = 0; i < numBodies; ++i, pos += 4 )
-   {
-       //divided by 300 just for scaling
-      glVertex4f( *pos, *( pos + 1 ), *( pos + 2 ), 300.0f );
-   }
-   glEnd();
-   nb->releaseMappedParticlePositions();
-
-   //Calling kernel for calculating subsequent positions
-   glFlush();
-   glutSwapBuffers();
-
-   numFrames++;
-   // update window title with FPS
-   if( numFrames >= 100 )
-   {
-      char buf[ 256 ];
-      sprintf( buf, "N-body simulation - %d Particles, %.02f FPS"
-               , nb->numParticles, (float)nb->getFPS() );
-      glutSetWindowTitle( buf );
-      numFrames = 0;
-   }
-}
-
-// keyboard function
-void keyboardFunc( NBody* me, unsigned char key )
-{
-   switch( key )
-   {
-       // If the user hits escape or Q, then exit
-
-       // ESCAPE_KEY = 27
-   case 27:
-   case 'q':
-   case 'Q':
-   {
-      if( me->cleanup() != SDK_SUCCESS )
-      {
-         exit( 1 );
-      }
-      else
-      {
-         exit( 0 );
-      }
-   }
-   default:
-      break;
-   }
-}
-
-
 int NBody::run()
 {
    int status = 0;
@@ -585,13 +459,13 @@ int NBody::verifyResults()
       float* velBuffers[ 2 ];
       for( int i = 0; i < 2; i++ )
       {
-         posBuffers[ i ] = (float*)malloc( numBodies * 4 * sizeof( float ) );
+         posBuffers[ i ] = (float*)malloc( numParticles * 4 * sizeof( float ) );
          CHECK_ALLOCATION( posBuffers[ i ], "Failed to allocate host memory. posBuffers" );
-         velBuffers[ i ] = (float*)malloc( numBodies * 4 * sizeof( float ) );
+         velBuffers[ i ] = (float*)malloc( numParticles * 4 * sizeof( float ) );
          CHECK_ALLOCATION( velBuffers[ i ], "Failed to allocate host memory. velBuffers" );
       }
-      memcpy( posBuffers[ 0 ], initPos, 4 * numBodies * sizeof( float ) );
-      memset( velBuffers[ 0 ], 0, numBodies * 4 * sizeof( float ) );
+      memcpy( posBuffers[ 0 ], initPos, 4 * numParticles * sizeof( float ) );
+      memset( velBuffers[ 0 ], 0, numParticles * 4 * sizeof( float ) );
       for( int i = 0; i < iterations; ++i )
       {
          int current = i % 2;
@@ -602,7 +476,7 @@ int NBody::verifyResults()
 
       // compare the results and see if they match
       float* pos = getMappedParticlePositions();
-      if( compare( pos, posBuffers[ ( iterations ) % 2 ], 4 * numBodies, 0.00001 ) )
+      if( compare( pos, posBuffers[ ( iterations ) % 2 ], 4 * numParticles, 0.00001 ) )
       {
          std::cout << "Passed!\n" << std::endl;
          ret = SDK_SUCCESS;
@@ -657,7 +531,7 @@ void NBody::printStats() const
 
       std::string stats[ 4 ];
 
-      double GFLOPs = ( (double)( (double)( KERNEL_FLOPS * numBodies ) )*numBodies*powf( 10, -9 ) ) / kernelTime;
+      double GFLOPs = ( (double)( (double)( KERNEL_FLOPS * numParticles ) )*numParticles*powf( 10, -9 ) ) / kernelTime;
 
       stats[ 0 ] = toString( numParticles, std::dec );
       stats[ 1 ] = toString( iterations, std::dec );
@@ -717,65 +591,4 @@ NBody::~NBody()
 #endif
 
    FREE( devices );
-}
-
-
-int main( int argc, char** argv )
-{
-   int status = 0;
-   NBody clNBody;
-   me = &clNBody;
-
-   if( clNBody.initialize() != SDK_SUCCESS )
-   {
-      return SDK_FAILURE;
-   }
-
-   if( clNBody.sampleArgs->parseCommandLine( argc, argv ) != SDK_SUCCESS )
-   {
-      return SDK_FAILURE;
-   }
-
-   if( clNBody.sampleArgs->isDumpBinaryEnabled() )
-   {
-      return clNBody.genBinaryImage();
-   }
-
-   status = clNBody.setup();
-   if( status != SDK_SUCCESS )
-   {
-      return SDK_FAILURE;
-   }
-
-   status = clNBody.run();
-   CHECK_ERROR( status, SDK_SUCCESS, "Sample Run Program Failed" );
-
-   status = clNBody.verifyResults();
-   CHECK_ERROR( status, SDK_SUCCESS, "Sample Verify Results Failed" );
-
-   clNBody.printStats();
-
-   std::function<void()> displayWrapper = [ pNB = &clNBody ] { displayfunc( pNB ); };
-   std::function<void( unsigned char, int, int )> keyboardWrapper = [ pNB = &clNBody ]( unsigned char key, int, int ) { keyboardFunc( pNB, key ); };
-
-   if( clNBody.display )
-   {
-       // Run in  graphical window if requested
-      glutInit( &argc, argv );
-      glutInitWindowPosition( 100, 10 );
-      glutInitWindowSize( 600, 600 );
-      glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE );
-      glutCreateWindow( "N-body simulation" );
-      GLInit();
-      glutDisplayFunc( displayWrapper.target<void()>() );
-      glutReshapeFunc( reShape );
-      glutIdleFunc( idle );
-      glutKeyboardFunc( keyboardWrapper.target<void( unsigned char, int, int )>() );
-      glutMainLoop();
-   }
-
-   status = clNBody.cleanup();
-   CHECK_ERROR( status, SDK_SUCCESS, "Sample CleanUP Failed" );
-
-   return SDK_SUCCESS;
 }
