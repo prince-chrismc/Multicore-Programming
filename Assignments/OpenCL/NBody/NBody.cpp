@@ -26,7 +26,6 @@ NBody::NBody() : isFirstLuanch( true ), glEvent( nullptr ), display( true ), sam
 initPos( nullptr ), initVel( nullptr ), vel( nullptr ), devices( nullptr ), mappedPosBuffer( nullptr ),
 groupSize( GROUP_SIZE )
 {
-   sampleTimer = new SDKTimer();
    sampleArgs.sampleVerStr = SAMPLE_VERSION;
    //numParticles = 8192;
    numParticles = 4096;
@@ -287,26 +286,17 @@ int NBody::initialize()
       return SDK_FAILURE;
    }
 
-   Option *num_particles = new Option;
-   CHECK_ALLOCATION( num_particles, "error. Failed to allocate memory (num_particles)\n" );
-
-   num_particles->_sVersion = "x";
-   num_particles->_lVersion = "particles";
-   num_particles->_description = "Number of particles";
-   num_particles->_type = CA_ARG_INT;
-   num_particles->_value = &numParticles;
-
-   sampleArgs.AddOption( num_particles );
-   delete num_particles;
+   auto num_particles = Option{ "x","particles","Number of particles", "" , CA_ARG_INT , &numParticles };
+   sampleArgs.AddOption( &num_particles );
 
    return SDK_SUCCESS;
 }
 
 int NBody::setup()
 {
-   fpsTimer = sampleTimer->createTimer();
-   sampleTimer->resetTimer( fpsTimer );
-   sampleTimer->startTimer( fpsTimer );
+   fpsTimer = sampleTimer.createTimer();
+   sampleTimer.resetTimer( fpsTimer );
+   sampleTimer.startTimer( fpsTimer );
 
    CHECK_ERROR( setupNBody(), SDK_SUCCESS, "Failed to setup NBody" );
    CHECK_ERROR( setupCL(), SDK_SUCCESS, "Failed to setup NBody OpenCL" );
@@ -316,12 +306,11 @@ int NBody::setup()
 
 double NBody::getFPS()
 {
-   sampleTimer->stopTimer( fpsTimer );
-   double elapsedTime = sampleTimer->readTimer( fpsTimer );
-   double fps = timerNumFrames / elapsedTime;
+   sampleTimer.stopTimer( fpsTimer );
+   const double fps = timerNumFrames / sampleTimer.readTimer( fpsTimer );
    timerNumFrames = 0;
-   sampleTimer->resetTimer( fpsTimer );
-   sampleTimer->startTimer( fpsTimer );
+   sampleTimer.resetTimer( fpsTimer );
+   sampleTimer.startTimer( fpsTimer );
    return fps;
 }
 

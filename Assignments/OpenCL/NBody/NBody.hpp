@@ -101,7 +101,7 @@ private:
    int fpsTimer = 0;
    int timerNumFrames = 0;
 
-   SDKTimer *sampleTimer;              /**< SDKTimer object */
+   SDKTimer sampleTimer;               /**< SDKTimer object */
 
 
    static float random( float randMax, float randMin );
