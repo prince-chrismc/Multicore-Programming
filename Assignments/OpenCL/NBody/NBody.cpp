@@ -19,19 +19,19 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <cmath>
 #include <malloc.h>
 #include <random>
-#include <functional>
-
 
 cl_float* pos;      /**< Output position */
 
-NBody::NBody() : setupTime( 0 ), kernelTime( 0 ), delT( 0.005f ), espSqr( 500.0f ), initPos( NULL ), initVel( NULL ), vel( NULL ), devices( NULL ),
-currentPosBufferIndex( 0 ), mappedPosBuffer( NULL ), groupSize( GROUP_SIZE ), iterations( 1 ), fpsTimer( 0 ), timerNumFrames( 0 ),
-isFirstLuanch( true ), glEvent( NULL ), display( false )
+NBody::NBody() : isFirstLuanch( true ), glEvent(nullptr ), display( false ), sampleArgs( true ),
+initPos(nullptr ), initVel(nullptr ), vel(nullptr ), devices(nullptr ), mappedPosBuffer(nullptr ),
+groupSize( GROUP_SIZE )
 {
-   sampleArgs = new CLCommandArgs();
    sampleTimer = new SDKTimer();
-   sampleArgs->sampleVerStr = SAMPLE_VERSION;
+   sampleArgs.sampleVerStr = SAMPLE_VERSION;
+   //numParticles = 8192;
    numParticles = 4096;
+
+   initialize();
 }
 
 float NBody::random( float randMax, float randMin )
@@ -74,7 +74,7 @@ int NBody::setupNBody()
       {
          initPos[ index ] = 100 + r * cos( a );
          initPos[ index + 1 ] = 40 + r * sin( a );
-         initPos[ index + 2 ] = random( 3, 100 );
+         initPos[ index + 2 ] = random( 109, 50 );
       }
       else
       {
@@ -87,25 +87,8 @@ int NBody::setupNBody()
       initPos[ index + 3 ] = random( 1, 1000 );
    }
 
-
    return SDK_SUCCESS;
 }
-
-int NBody::genBinaryImage() const
-{
-   bifData binaryData;
-   binaryData.kernelName = std::string( "NBody_Kernels.cl" );
-   binaryData.flagsStr = std::string( "" );
-   if( sampleArgs->isComplierFlagsSpecified() )
-   {
-      binaryData.flagsFileName = sampleArgs->flags;
-   }
-
-   binaryData.binaryName = sampleArgs->dumpBinary;
-
-   return generateBinaryImage( binaryData );
-}
-
 
 int NBody::setupCL()
 {
@@ -113,18 +96,22 @@ int NBody::setupCL()
 
    cl_device_type dType;
 
-   if( sampleArgs->deviceType == "cpu" )
+   if( sampleArgs.deviceType == "cpu" )
    {
       dType = CL_DEVICE_TYPE_CPU;
    }
-   else //deviceType = "gpu"
+   else if( sampleArgs.deviceType == "gpu" )
    {
       dType = CL_DEVICE_TYPE_GPU;
-      if( !sampleArgs->isThereGPU() )
+      if( !sampleArgs.isThereGPU() )
       {
          std::cout << "GPU not found. Falling back to CPU device" << std::endl;
          dType = CL_DEVICE_TYPE_CPU;
       }
+   }
+   else
+   {
+      dType = CL_DEVICE_TYPE_ALL;
    }
 
    /*
@@ -132,7 +119,7 @@ int NBody::setupCL()
     * the AMD one if available or a reasonable default.
     */
    cl_platform_id platform = nullptr;
-   int retValue = getPlatform( platform, sampleArgs->platformId, sampleArgs->isPlatformEnabled() );
+   int retValue = getPlatform( platform, sampleArgs.platformId, sampleArgs.isPlatformEnabled() );
    CHECK_ERROR( retValue, SDK_SUCCESS, "getPlatform() failed" );
 
    // Display available devices.
@@ -147,18 +134,18 @@ int NBody::setupCL()
    CHECK_OPENCL_ERROR( status, "clCreateContextFromType failed." );
 
    // getting device on which to run the sample
-   status = getDevices( context, &devices, sampleArgs->deviceId, sampleArgs->isDeviceIdEnabled() );
+   status = getDevices( context, &devices, sampleArgs.deviceId, sampleArgs.isDeviceIdEnabled() );
    CHECK_ERROR( status, SDK_SUCCESS, "getDevices() failed" );
 
    {
       // The block is to move the declaration of prop closer to its use
       const cl_command_queue_properties prop = 0;
-      commandQueue = clCreateCommandQueue( context, devices[ sampleArgs->deviceId ], prop, &status );
+      commandQueue = clCreateCommandQueue( context, devices[ sampleArgs.deviceId ], prop, &status );
       CHECK_OPENCL_ERROR( status, "clCreateCommandQueue failed." );
    }
 
    //Set device info of given cl_device_id
-   retValue = deviceInfo.setDeviceInfo( devices[ sampleArgs->deviceId ] );
+   retValue = deviceInfo.setDeviceInfo( devices[ sampleArgs.deviceId ] );
    CHECK_ERROR( retValue, SDK_SUCCESS, "SDKDeviceInfo::setDeviceInfo() failed" );
 
    /*
@@ -191,16 +178,16 @@ int NBody::setupCL()
    buildProgramData buildData;
    buildData.kernelName = "NBody_Kernels.cl";
    buildData.devices = devices;
-   buildData.deviceId = sampleArgs->deviceId;
+   buildData.deviceId = sampleArgs.deviceId;
    buildData.flagsStr.clear();
-   if( sampleArgs->isLoadBinaryEnabled() )
+   if( sampleArgs.isLoadBinaryEnabled() )
    {
-      buildData.binaryName = sampleArgs->loadBinary;
+      buildData.binaryName = sampleArgs.loadBinary;
    }
 
-   if( sampleArgs->isComplierFlagsSpecified() )
+   if( sampleArgs.isComplierFlagsSpecified() )
    {
-      buildData.flagsFileName = sampleArgs->flags;
+      buildData.flagsFileName = sampleArgs.flags;
    }
 
    retValue = buildOpenCLProgram( program, context, buildData );
@@ -235,8 +222,8 @@ int NBody::setupCLKernels() const
 
 int NBody::runCLKernels()
 {
-   int currentBuffer = currentPosBufferIndex;
-   int nextBuffer = ( currentPosBufferIndex + 1 ) % 2;
+   const int currentBuffer = currentPosBufferIndex;
+   const int nextBuffer = ( currentPosBufferIndex + 1 ) % 2;
 
    /*
    * Enqueue a kernel run call.
@@ -245,22 +232,22 @@ int NBody::runCLKernels()
    size_t localThreads[] = { groupSize };
 
    // Particle positions
-   cl_int status = clSetKernelArg( kernel, 0, sizeof( cl_mem ), (void*)( particlePos + currentBuffer ) );
+   cl_int status = clSetKernelArg( kernel, 0, sizeof( cl_mem ), particlePos + currentBuffer );
    CHECK_OPENCL_ERROR( status, "clSetKernelArg failed. (updatedPos)" );
 
    // Particle velocity
-   status = clSetKernelArg( kernel, 1, sizeof( cl_mem ), (void *)( particleVel + currentBuffer ) );
+   status = clSetKernelArg( kernel, 1, sizeof( cl_mem ), particleVel + currentBuffer );
    CHECK_OPENCL_ERROR( status, "clSetKernelArg failed. (updatedVel)" );
 
    // Particle positions
-   status = clSetKernelArg( kernel, 5, sizeof( cl_mem ), (void*)( particlePos + nextBuffer ) );
+   status = clSetKernelArg( kernel, 5, sizeof( cl_mem ), particlePos + nextBuffer );
    CHECK_OPENCL_ERROR( status, "clSetKernelArg failed. (unewPos)" );
 
    // Particle velocity
-   status = clSetKernelArg( kernel, 6, sizeof( cl_mem ), (void*)( particleVel + nextBuffer ) );
+   status = clSetKernelArg( kernel, 6, sizeof( cl_mem ), particleVel + nextBuffer );
    CHECK_OPENCL_ERROR( status, "clSetKernelArg failed. (newVel)" );
 
-   status = clEnqueueNDRangeKernel( commandQueue, kernel, 1, NULL, globalThreads, localThreads, 0, NULL, NULL );
+   status = clEnqueueNDRangeKernel( commandQueue, kernel, 1, nullptr, globalThreads, localThreads, 0, nullptr, nullptr );
    CHECK_OPENCL_ERROR( status, "clEnqueueNDRangeKernel failed." );
 
    status = clFlush( commandQueue );
@@ -276,9 +263,8 @@ float* NBody::getMappedParticlePositions()
 {
    cl_int status;
    mappedPosBufferIndex = currentPosBufferIndex;
-   mappedPosBuffer = (float*)clEnqueueMapBuffer( commandQueue,
-                                                 particlePos[ mappedPosBufferIndex ], CL_TRUE, CL_MAP_READ
-                                                 , 0, numParticles * 4 * sizeof( float ), 0, NULL, NULL, &status );
+   mappedPosBuffer = (float*)clEnqueueMapBuffer( commandQueue, particlePos[ mappedPosBufferIndex ], CL_TRUE, CL_MAP_READ
+                                                 , 0, numParticles * 4 * sizeof( float ), 0, nullptr, nullptr, &status );
    return mappedPosBuffer;
 }
 
@@ -286,53 +272,9 @@ void NBody::releaseMappedParticlePositions()
 {
    if( mappedPosBuffer )
    {
-      cl_int status = clEnqueueUnmapMemObject( commandQueue,
-                                               particlePos[ mappedPosBufferIndex ], mappedPosBuffer, 0, NULL, NULL );
-      mappedPosBuffer = NULL;
+      cl_int status = clEnqueueUnmapMemObject( commandQueue, particlePos[ mappedPosBufferIndex ], mappedPosBuffer, 0, nullptr, nullptr );
+      mappedPosBuffer = nullptr;
       clFlush( commandQueue );
-   }
-}
-
-/*
-* n-body simulation on cpu
-*/
-void NBody::nBodyCPUReference( float* currentPos, float* currentVel, float* newPos, float* newVel ) const
-{
-    //Iterate for all samples
-   for( cl_uint i = 0; i < numParticles; ++i )
-   {
-      int myIndex = 4 * i;
-      float acc[ 3 ] = { 0.0f, 0.0f, 0.0f };
-      for( cl_uint j = 0; j < numParticles; ++j )
-      {
-         float r[ 3 ];
-         int index = 4 * j;
-
-         float distSqr = 0.0f;
-         for( int k = 0; k < 3; ++k )
-         {
-            r[ k ] = currentPos[ index + k ] - currentPos[ myIndex + k ];
-
-            distSqr += r[ k ] * r[ k ];
-         }
-
-         float invDist = 1.0f / sqrt( distSqr + espSqr );
-         float invDistCube = invDist * invDist * invDist;
-         float s = currentPos[ index + 3 ] * invDistCube;
-
-         for( int k = 0; k < 3; ++k )
-         {
-            acc[ k ] += s * r[ k ];
-         }
-      }
-
-      for( int k = 0; k < 3; ++k )
-      {
-         newPos[ myIndex + k ] = currentPos[ myIndex + k ] + currentVel[ myIndex + k ] * delT +
-            0.5f * acc[ k ] * delT * delT;
-         newVel[ myIndex + k ] = currentVel[ myIndex + k ] + acc[ k ] * delT;
-      }
-      newPos[ myIndex + 3 ] = currentPos[ myIndex + 3 ];
    }
 }
 
@@ -340,7 +282,7 @@ int NBody::initialize()
 {
     // Call base class Initialize to get default configuration
    int status = 0;
-   if( sampleArgs->initialize() != SDK_SUCCESS )
+   if( sampleArgs.initialize() != SDK_SUCCESS )
    {
       return SDK_FAILURE;
    }
@@ -355,7 +297,7 @@ int NBody::initialize()
    num_particles->_type = CA_ARG_INT;
    num_particles->_value = &numParticles;
 
-   sampleArgs->AddOption( num_particles );
+   sampleArgs.AddOption( num_particles );
    delete num_particles;
 
    Option *num_iterations = new Option;
@@ -368,7 +310,7 @@ int NBody::initialize()
    num_iterations->_type = CA_ARG_INT;
    num_iterations->_value = &iterations;
 
-   sampleArgs->AddOption( num_iterations );
+   sampleArgs.AddOption( num_iterations );
    delete num_iterations;
 
    Option *display_option = new Option;
@@ -381,7 +323,7 @@ int NBody::initialize()
    display_option->_type = CA_NO_ARGUMENT;
    display_option->_value = &display;
 
-   sampleArgs->AddOption( display_option );
+   sampleArgs.AddOption( display_option );
    delete display_option;
 
    return SDK_SUCCESS;
@@ -421,7 +363,7 @@ int NBody::run()
       return SDK_FAILURE;
    }
 
-   if( sampleArgs->verify || sampleArgs->timing )
+   if( sampleArgs.verify || sampleArgs.timing )
    {
       int timer = sampleTimer->createTimer();
       sampleTimer->resetTimer( timer );
@@ -444,62 +386,6 @@ int NBody::run()
    return SDK_SUCCESS;
 }
 
-int NBody::verifyResults()
-{
-   int ret = SDK_SUCCESS;
-   if( sampleArgs->verify )
-   {
-      float* posBuffers[ 2 ];
-      float* velBuffers[ 2 ];
-      for( int i = 0; i < 2; i++ )
-      {
-         posBuffers[ i ] = (float*)malloc( numParticles * 4 * sizeof( float ) );
-         CHECK_ALLOCATION( posBuffers[ i ], "Failed to allocate host memory. posBuffers" );
-         velBuffers[ i ] = (float*)malloc( numParticles * 4 * sizeof( float ) );
-         CHECK_ALLOCATION( velBuffers[ i ], "Failed to allocate host memory. velBuffers" );
-      }
-      memcpy( posBuffers[ 0 ], initPos, 4 * numParticles * sizeof( float ) );
-      memset( velBuffers[ 0 ], 0, numParticles * 4 * sizeof( float ) );
-      for( int i = 0; i < iterations; ++i )
-      {
-         int current = i % 2;
-         int next = ( i + 1 ) % 2;
-         nBodyCPUReference( posBuffers[ current ], velBuffers[ current ]
-                            , posBuffers[ next ], velBuffers[ next ] );
-      }
-
-      // compare the results and see if they match
-      float* pos = getMappedParticlePositions();
-      if( compare( pos, posBuffers[ ( iterations ) % 2 ], 4 * numParticles, 0.00001 ) )
-      {
-         std::cout << "Passed!\n" << std::endl;
-         ret = SDK_SUCCESS;
-      }
-      else
-      {
-         std::cout << "Failed!\n" << std::endl;
-         ret = SDK_FAILURE;
-      }
-      releaseMappedParticlePositions();
-
-      for( int i = 0; i < 2; i++ )
-      {
-         free( posBuffers[ i ] );
-         free( velBuffers[ i ] );
-      }
-
-   }
-   return ret;
-}
-
-void NBody::initFPSTimer()
-{
-   timerNumFrames = 0;
-   fpsTimer = sampleTimer->createTimer();
-   sampleTimer->resetTimer( fpsTimer );
-   sampleTimer->startTimer( fpsTimer );
-}
-
 double NBody::getFPS()
 {
    sampleTimer->stopTimer( fpsTimer );
@@ -513,7 +399,7 @@ double NBody::getFPS()
 
 void NBody::printStats() const
 {
-   if( sampleArgs->timing )
+   if( sampleArgs.timing )
    {
       std::string strArray[ 4 ] =
       {
@@ -585,4 +471,9 @@ NBody::~NBody()
 #endif
 
    FREE( devices );
+}
+
+int NBody::parseCommandLine(int argc, char** argv)
+{
+   return sampleArgs.parseCommandLine( argc, argv );
 }

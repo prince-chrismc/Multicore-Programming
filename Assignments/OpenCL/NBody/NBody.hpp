@@ -33,68 +33,24 @@ using namespace appsdk;
 * NBody
 * Class implements OpenCL  NBody sample
 */
-
 class NBody
 {
-   cl_double setupTime;                /**< time taken to setup OpenCL resources and building kernel */
-   cl_double kernelTime;               /**< time taken to run kernel and read result back */
-
-   cl_float delT;                      /**< dT (timestep) */
-   cl_float espSqr;                    /**< Softening Factor*/
-   cl_float* initPos;                  /**< initial position */
-   cl_float* initVel;                  /**< initial velocity */
-   cl_float* vel;                      /**< Output velocity */
-   cl_context context{};               /**< CL context */
-   cl_device_id *devices;              /**< CL device list */
-   cl_mem particlePos[ 2 ]{};          // positions of particles
-   cl_mem particleVel[ 2 ]{};          // velocity of particles
-   int currentPosBufferIndex;
-   float* mappedPosBuffer;             // mapped pointer of the position buffer
-   int mappedPosBufferIndex{};
-   cl_command_queue commandQueue{};    /**< CL command queue */
-   cl_program program{};               /**< CL program */
-   cl_kernel kernel{};                 /**< CL kernel */
-   size_t groupSize;                   /**< Work-Group size */
-
-   int iterations;
-   SDKDeviceInfo
-      deviceInfo;                /**< Structure to store device information*/
-   KernelWorkGroupInfo
-      kernelInfo;          /**< Structure to store kernel related info */
-
-   int fpsTimer;
-   int timerNumFrames;
-
-   SDKTimer *sampleTimer;      /**< SDKTimer object */
-
-private:
-
-   static float random( float randMax, float randMin );
-
 public:
+   NBody();
+   ~NBody();
+   int parseCommandLine( int argc, char** argv );
 
-   CLCommandArgs   *sampleArgs;   /**< CLCommand argument class */
-
+   //--------------------------------------------------------------------------------
    cl_uint numParticles;
    bool    isFirstLuanch;
    cl_event glEvent;
    cl_bool display;
-
-   NBody();
-   ~NBody();
 
    /**
     * Allocate and initialize host memory array with random values
     * @return SDK_SUCCESS on success and SDK_FAILURE on failure
     */
    int setupNBody();
-
-   /**
-    * Override from SDKSample, Generate binary image of given kernel
-    * and exit application
-    * @return SDK_SUCCESS on success and SDK_FAILURE on failure
-    */
-   int genBinaryImage() const;
 
    /**
    * OpenCL related initialization.
@@ -110,35 +66,15 @@ public:
    */
    int setupCLKernels() const;
 
-   /**
-   * Enqueue calls to the kernels
-   * on to the command queue, wait till end of kernel execution.
-   * Get kernel start and end time if timing is enabled
-   * @return SDK_SUCCESS on success and SDK_FAILURE on failure
-   */
-   int runCLKernels();
 
-   /**
-   * Reference CPU implementation of Binomial Option
-   * for performance comparison
-   */
-   void nBodyCPUReference( float* currentPos, float* currentVel, float* newPos, float* newVel ) const;
-
-
-   float* getMappedParticlePositions();
-   void releaseMappedParticlePositions();
+   // calculate FPS
+   double getFPS();
+   //--------------------------------------------------------------------------------
 
    /**
    * Override from SDKSample. Print sample stats.
    */
    void printStats() const;
-
-   /**
-   * Override from SDKSample. Initialize
-   * command line parser, add custom options
-   * @return SDK_SUCCESS on success and SDK_FAILURE on failure
-   */
-   int initialize();
 
    /**
    * Override from SDKSample, adjust width and height
@@ -155,25 +91,64 @@ public:
    int run();
 
    /**
+   * Enqueue calls to the kernels
+   * on to the command queue, wait till end of kernel execution.
+   * Get kernel start and end time if timing is enabled
+   * @return SDK_SUCCESS on success and SDK_FAILURE on failure
+   */
+   int runCLKernels();
+
+   float* getMappedParticlePositions();
+   void releaseMappedParticlePositions();
+
+   /**
    * Override from SDKSample
    * Cleanup memory allocations
    * @return SDK_SUCCESS on success and SDK_FAILURE on failure
    */
    int cleanup();
 
+private:
+   CLCommandArgs sampleArgs;   /**< CLCommand argument class */
+
+   cl_double setupTime = 0;            /**< time taken to setup OpenCL resources and building kernel */
+   cl_double kernelTime = 0;           /**< time taken to run kernel and read result back */
+
+   cl_float delT = 0.005f;             /**< dT (timestep) */
+   cl_float espSqr = 500.0f;           /**< Softening Factor*/
+   cl_float* initPos;                  /**< initial position */
+   cl_float* initVel;                  /**< initial velocity */
+   cl_float* vel;                      /**< Output velocity */
+   cl_context context{};               /**< CL context */
+   cl_device_id *devices;              /**< CL device list */
+   cl_mem particlePos[ 2 ]{};          // positions of particles
+   cl_mem particleVel[ 2 ]{};          // velocity of particles
+   int currentPosBufferIndex = 0;
+   float* mappedPosBuffer;             // mapped pointer of the position buffer
+   int mappedPosBufferIndex{};
+   cl_command_queue commandQueue{};    /**< CL command queue */
+   cl_program program{};               /**< CL program */
+   cl_kernel kernel{};                 /**< CL kernel */
+   size_t groupSize;                   /**< Work-Group size */
+
+   int iterations = 1;
+   SDKDeviceInfo deviceInfo;           /**< Structure to store device information*/
+   KernelWorkGroupInfo kernelInfo;     /**< Structure to store kernel related info */
+
+   int fpsTimer = 0;
+   int timerNumFrames = 0;
+
+   SDKTimer *sampleTimer;              /**< SDKTimer object */
+
+
+   static float random( float randMax, float randMin );
+
    /**
-   * Override from SDKSample
-   * Verify against reference implementation
+   * Override from SDKSample. Initialize
+   * command line parser, add custom options
    * @return SDK_SUCCESS on success and SDK_FAILURE on failure
    */
-   int verifyResults();
-
-
-   // init the timer for FPS calculation
-   void initFPSTimer();
-
-   // calculate FPS
-   double getFPS();
+   int initialize();
 };
 
 #endif // NBODY_H_

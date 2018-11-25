@@ -39,10 +39,7 @@ int main( int argc, char** argv )
    NBody clNBody;
    nb = &clNBody;
 
-   int status = clNBody.initialize();
-   CHECK_ERROR( status, SDK_SUCCESS, "Failed to init NBody" );
-
-   status = clNBody.sampleArgs->parseCommandLine( argc, argv );
+   int status = clNBody.parseCommandLine( argc, argv );
    CHECK_ERROR( status, SDK_SUCCESS, "Failed to parse CLI agrs" );
 
    status = clNBody.setup();
@@ -58,7 +55,7 @@ int main( int argc, char** argv )
        // Run in  graphical window if requested
       glutInit( &argc, argv );
       glutInitWindowPosition( 100, 10 );
-      glutInitWindowSize( 600, 600 );
+      glutInitWindowSize( 1000, 800 );
       glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE );
       glutCreateWindow( "N-body simulation" );
       GLInit();

@@ -17,16 +17,18 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
  * For a description of the algorithm and the terms used, please see the
  * documentation for this sample.
  *
- * Each work-item invocation of this kernel, calculates the position for 
+ * Each work-item invocation of this kernel, calculates the position for
  * one particle
  *
  */
 
-#define UNROLL_FACTOR  8
-__kernel 
-void nbody_sim(__global float4* pos, __global float4* vel
-		,unsigned int numBodies ,float deltaTime, float epsSqr
-		,__global float4* newPosition, __global float4* newVelocity) {
+#define UNROLL_FACTOR 8
+__kernel
+void nbody_sim(__global float4* pos,
+               __global float4* vel,
+               unsigned int numBodies ,float deltaTime, float epsSqr,
+               __global float4* newPosition, __global float4* newVelocity)
+{
 
     unsigned int gid = get_global_id(0);
     float4 myPos = pos[gid];
@@ -34,9 +36,11 @@ void nbody_sim(__global float4* pos, __global float4* vel
 
 
     unsigned int i = 0;
-    for (; (i+UNROLL_FACTOR) < numBodies; ) {
+    for (; (i+UNROLL_FACTOR) < numBodies; )
+    {
 #pragma unroll UNROLL_FACTOR
-        for(int j = 0; j < UNROLL_FACTOR; j++,i++) {
+        for(int j = 0; j < UNROLL_FACTOR; j++,i++)
+        {
             float4 p = pos[i];
             float4 r;
             r.xyz = p.xyz - myPos.xyz;
@@ -50,7 +54,8 @@ void nbody_sim(__global float4* pos, __global float4* vel
             acc.xyz += s * r.xyz;
         }
     }
-    for (; i < numBodies; i++) {
+    for (; i < numBodies; i++)
+    {
         float4 p = pos[i];
 
         float4 r;
