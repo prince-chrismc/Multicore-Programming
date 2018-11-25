@@ -88,8 +88,7 @@ int NBody::setupNBody()
     return SDK_SUCCESS;
 }
 
-int
-NBody::genBinaryImage()
+int NBody::genBinaryImage()
 {
     bifData binaryData;
     binaryData.kernelName = std::string("NBody_Kernels.cl");
@@ -105,8 +104,7 @@ NBody::genBinaryImage()
 }
 
 
-int
-NBody::setupCL()
+int NBody::setupCL()
 {
     cl_int status = CL_SUCCESS;
 
@@ -138,7 +136,6 @@ NBody::setupCL()
     // Display available devices.
     retValue = displayDevices(platform, dType);
     CHECK_ERROR(retValue, SDK_SUCCESS, "displayDevices() failed");
-
 
     /*
      * If we could find our platform, use it. Otherwise use just available platform.
@@ -237,8 +234,7 @@ NBody::setupCL()
 }
 
 
-int
-NBody::setupCLKernels()
+int NBody::setupCLKernels()
 {
     cl_int status;
 
@@ -342,8 +338,7 @@ void NBody::releaseMappedParticlePositions()
 /*
 * n-body simulation on cpu
 */
-void
-NBody::nBodyCPUReference(float* currentPos, float* currentVel, float* newPos,
+void NBody::nBodyCPUReference(float* currentPos, float* currentVel, float* newPos,
                          float* newVel)
 {
     //Iterate for all samples
@@ -384,8 +379,7 @@ NBody::nBodyCPUReference(float* currentPos, float* currentVel, float* newPos,
     }
 }
 
-int
-NBody::initialize()
+int NBody::initialize()
 {
     // Call base class Initialize to get default configuration
     int status = 0;
@@ -436,8 +430,7 @@ NBody::initialize()
     return SDK_SUCCESS;
 }
 
-int
-NBody::setup()
+int NBody::setup()
 {
     int status = 0;
     if(setupNBody() != SDK_SUCCESS)
@@ -465,8 +458,7 @@ NBody::setup()
 /**
 * @brief Initialize GL
 */
-void
-GLInit()
+void GLInit()
 {
     glClearColor(0.0 ,0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -478,8 +470,7 @@ GLInit()
 /**
 * @brief Glut Idle function
 */
-void
-idle()
+void idle()
 {
     glutPostRedisplay();
 }
@@ -490,8 +481,7 @@ idle()
 * @param w numParticles of OpenGL window
 * @param h height of OpenGL window
 */
-void
-reShape(int w,int h)
+void reShape(int w,int h)
 {
     glViewport(0, 0, w, h);
 
@@ -559,8 +549,7 @@ void displayfunc()
 }
 
 // keyboard function
-void
-keyboardFunc(unsigned char key, int mouseX, int mouseY)
+void keyboardFunc(unsigned char key, int mouseX, int mouseY)
 {
     switch(key)
     {
@@ -586,8 +575,7 @@ keyboardFunc(unsigned char key, int mouseX, int mouseY)
 }
 
 
-int
-NBody::run()
+int NBody::run()
 {
     int status = 0;
     // Arguments are set and execution call is enqueued on command buffer
@@ -619,8 +607,7 @@ NBody::run()
     return SDK_SUCCESS;
 }
 
-int
-NBody::verifyResults()
+int NBody::verifyResults()
 {
     int ret = SDK_SUCCESS;
     if(sampleArgs->verify)
@@ -668,8 +655,7 @@ NBody::verifyResults()
     return ret;
 }
 
-void
-NBody::printStats()
+void NBody::printStats()
 {
     if(sampleArgs->timing)
     {
@@ -694,8 +680,7 @@ NBody::printStats()
     }
 }
 
-int
-NBody::cleanup()
+int NBody::cleanup()
 {
     // Releases OpenCL resources (Context, Memory etc.)
     cl_int status;
@@ -750,8 +735,7 @@ NBody::~NBody()
 }
 
 
-int
-main(int argc, char * argv[])
+int main(int argc, char * argv[])
 {
     int status = 0;
     NBody clNBody;
