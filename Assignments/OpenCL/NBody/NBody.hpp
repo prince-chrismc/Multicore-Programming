@@ -18,10 +18,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #ifndef NBODY_H_
 #define NBODY_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
 #include "CLUtil.hpp"
 
 #define GROUP_SIZE 64
@@ -48,17 +44,16 @@ class NBody
    cl_float* initPos;                  /**< initial position */
    cl_float* initVel;                  /**< initial velocity */
    cl_float* vel;                      /**< Output velocity */
-   cl_context context;                 /**< CL context */
+   cl_context context{};               /**< CL context */
    cl_device_id *devices;              /**< CL device list */
-   cl_mem particlePos[ 2 ];              // positions of particles
-   cl_mem particleVel[ 2 ];              // velocity of particles
+   cl_mem particlePos[ 2 ]{};          // positions of particles
+   cl_mem particleVel[ 2 ]{};          // velocity of particles
    int currentPosBufferIndex;
-   unsigned int currentIterationCL;    // current iteration in the simulation
    float* mappedPosBuffer;             // mapped pointer of the position buffer
-   int mappedPosBufferIndex;
-   cl_command_queue commandQueue;      /**< CL command queue */
-   cl_program program;                 /**< CL program */
-   cl_kernel kernel;                   /**< CL kernel */
+   int mappedPosBufferIndex{};
+   cl_command_queue commandQueue{};    /**< CL command queue */
+   cl_program program{};               /**< CL program */
+   cl_kernel kernel{};                 /**< CL kernel */
    size_t groupSize;                   /**< Work-Group size */
 
    int iterations;
@@ -85,53 +80,24 @@ public:
    cl_event glEvent;
    cl_bool display;
 
-     /**
-     * Constructor
-     * Initialize member variables
-     */
-   explicit NBody()
-      : setupTime( 0 ),
-      kernelTime( 0 ),
-      delT( 0.005f ),
-      espSqr( 500.0f ),
-      initPos( NULL ),
-      initVel( NULL ),
-      vel( NULL ),
-      devices( NULL ),
-      groupSize( GROUP_SIZE ),
-      iterations( 1 ),
-      currentPosBufferIndex( 0 ),
-      currentIterationCL( 0 ),
-      mappedPosBuffer( NULL ),
-      fpsTimer( 0 ),
-      timerNumFrames( 0 ),
-      isFirstLuanch( true ),
-      glEvent( NULL ),
-      display( false )
-   {
-      sampleArgs = new CLCommandArgs();
-      sampleTimer = new SDKTimer();
-      sampleArgs->sampleVerStr = SAMPLE_VERSION;
-      numParticles = 1024;
-   }
-
+   NBody();
    ~NBody();
 
    /**
-   * Allocate and initialize host memory array with random values
-   * @return SDK_SUCCESS on success and SDK_FAILURE on failure
-   */
+    * Allocate and initialize host memory array with random values
+    * @return SDK_SUCCESS on success and SDK_FAILURE on failure
+    */
    int setupNBody();
 
    /**
     * Override from SDKSample, Generate binary image of given kernel
     * and exit application
-   * @return SDK_SUCCESS on success and SDK_FAILURE on failure
+    * @return SDK_SUCCESS on success and SDK_FAILURE on failure
     */
    int genBinaryImage() const;
 
    /**
-   * OpenCL related initialisations.
+   * OpenCL related initialization.
    * Set up Context, Device list, Command Queue, Memory buffers
    * Build CL kernel program executable
    * @return SDK_SUCCESS on success and SDK_FAILURE on failure
@@ -156,8 +122,7 @@ public:
    * Reference CPU implementation of Binomial Option
    * for performance comparison
    */
-   void nBodyCPUReference( float* currentPos, float* currentVel
-                           , float* newPos, float* newVel );
+   void nBodyCPUReference( float* currentPos, float* currentVel, float* newPos, float* newVel ) const;
 
 
    float* getMappedParticlePositions();
@@ -166,7 +131,7 @@ public:
    /**
    * Override from SDKSample. Print sample stats.
    */
-   void printStats();
+   void printStats() const;
 
    /**
    * Override from SDKSample. Initialize
@@ -205,25 +170,10 @@ public:
 
 
    // init the timer for FPS calculation
-   void initFPSTimer()
-   {
-      timerNumFrames = 0;
-      fpsTimer = sampleTimer->createTimer();
-      sampleTimer->resetTimer( fpsTimer );
-      sampleTimer->startTimer( fpsTimer );
-   };
+   void initFPSTimer();
 
    // calculate FPS
-   double getFPS()
-   {
-      sampleTimer->stopTimer( fpsTimer );
-      double elapsedTime = sampleTimer->readTimer( fpsTimer );
-      double fps = timerNumFrames / elapsedTime;
-      timerNumFrames = 0;
-      sampleTimer->resetTimer( fpsTimer );
-      sampleTimer->startTimer( fpsTimer );
-      return fps;
-   };
+   double getFPS();
 };
 
 #endif // NBODY_H_

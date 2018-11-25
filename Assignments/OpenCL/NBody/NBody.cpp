@@ -27,6 +27,16 @@ cl_float* pos;      /**< Output position */
 void* me;           /**< Pointing to NBody class */
 
 
+NBody::NBody() : setupTime( 0 ), kernelTime( 0 ), delT( 0.005f ), espSqr( 500.0f ), initPos( NULL ), initVel( NULL ), vel( NULL ), devices( NULL ),
+currentPosBufferIndex( 0 ), mappedPosBuffer( NULL ), groupSize( GROUP_SIZE ), iterations( 1 ), fpsTimer( 0 ), timerNumFrames( 0 ),
+isFirstLuanch( true ), glEvent( NULL ), display( false )
+{
+   sampleArgs = new CLCommandArgs();
+   sampleTimer = new SDKTimer();
+   sampleArgs->sampleVerStr = SAMPLE_VERSION;
+   numParticles = 1024;
+}
+
 float NBody::random( float randMax, float randMin )
 {
    const auto result = (float)rand() / (float)RAND_MAX;
@@ -163,9 +173,9 @@ int NBody::setupCL()
    const size_t bufferSize = numBodies * sizeof( cl_float4 );
    for( int i = 0; i < 2; i++ )
    {
-      particlePos[ i ] = clCreateBuffer( context, CL_MEM_READ_WRITE, bufferSize, nullptr,  &status );
+      particlePos[ i ] = clCreateBuffer( context, CL_MEM_READ_WRITE, bufferSize, nullptr, &status );
       CHECK_OPENCL_ERROR( status, "clCreateBuffer failed. (particlePos)" );
-      particleVel[ i ] = clCreateBuffer( context, CL_MEM_READ_WRITE, bufferSize, nullptr,  &status );
+      particleVel[ i ] = clCreateBuffer( context, CL_MEM_READ_WRITE, bufferSize, nullptr, &status );
       CHECK_OPENCL_ERROR( status, "clCreateBuffer failed. (particleVel)" );
    }
 
@@ -298,8 +308,7 @@ void NBody::releaseMappedParticlePositions()
 /*
 * n-body simulation on cpu
 */
-void NBody::nBodyCPUReference( float* currentPos, float* currentVel, float* newPos,
-                               float* newVel )
+void NBody::nBodyCPUReference( float* currentPos, float* currentVel, float* newPos, float* newVel ) const
 {
     //Iterate for all samples
    for( cl_uint i = 0; i < numBodies; ++i )
@@ -615,7 +624,26 @@ int NBody::verifyResults()
    return ret;
 }
 
-void NBody::printStats()
+void NBody::initFPSTimer()
+{
+   timerNumFrames = 0;
+   fpsTimer = sampleTimer->createTimer();
+   sampleTimer->resetTimer( fpsTimer );
+   sampleTimer->startTimer( fpsTimer );
+}
+
+double NBody::getFPS()
+{
+   sampleTimer->stopTimer( fpsTimer );
+   double elapsedTime = sampleTimer->readTimer( fpsTimer );
+   double fps = timerNumFrames / elapsedTime;
+   timerNumFrames = 0;
+   sampleTimer->resetTimer( fpsTimer );
+   sampleTimer->startTimer( fpsTimer );
+   return fps;
+}
+
+void NBody::printStats() const
 {
    if( sampleArgs->timing )
    {
@@ -624,7 +652,7 @@ void NBody::printStats()
           "Particles",
           "Iterations",
           "Kernel Time(sec)",
-       "GFLOPS"
+          "GFLOPS"
       };
 
       std::string stats[ 4 ];
