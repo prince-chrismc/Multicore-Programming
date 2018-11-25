@@ -20,6 +20,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <cmath>
 #include <malloc.h>
 #include <random>
+#include <functional>
 
 
 cl_uint numBodies;      /**< No. of particles*/
@@ -464,7 +465,7 @@ void reShape( int w, int h )
 /**
 * @brief OpenGL display function
 */
-void displayfunc()
+void displayfunc( NBody *nb )
 {
    static int numFrames = 0;
 
@@ -479,7 +480,6 @@ void displayfunc()
 
    glColor3f( 1.0f, 0.5f, 0.5f );
 
-   NBody *nb = (NBody *)me;
    if( nb->isFirstLuanch )
    {
        //Calling kernel for calculatig subsequent positions
@@ -518,7 +518,7 @@ void displayfunc()
 }
 
 // keyboard function
-void keyboardFunc( unsigned char key, int mouseX, int mouseY )
+void keyboardFunc( NBody* me, unsigned char key )
 {
    switch( key )
    {
@@ -529,7 +529,7 @@ void keyboardFunc( unsigned char key, int mouseX, int mouseY )
    case 'q':
    case 'Q':
    {
-      if( ( (NBody*)me )->cleanup() != SDK_SUCCESS )
+      if( me->cleanup() != SDK_SUCCESS )
       {
          exit( 1 );
       }
@@ -670,10 +670,7 @@ void NBody::printStats() const
 
 int NBody::cleanup()
 {
-    // Releases OpenCL resources (Context, Memory etc.)
-   cl_int status;
-
-   status = clReleaseKernel( kernel );
+   cl_int status = clReleaseKernel(kernel);
    CHECK_OPENCL_ERROR( status, "clReleaseKernel failed.(kernel)" );
 
    status = clReleaseProgram( program );
@@ -723,7 +720,7 @@ NBody::~NBody()
 }
 
 
-int main( int argc, char * argv[] )
+int main( int argc, char** argv )
 {
    int status = 0;
    NBody clNBody;
@@ -758,6 +755,9 @@ int main( int argc, char * argv[] )
 
    clNBody.printStats();
 
+   std::function<void()> displayWrapper = [ pNB = &clNBody ] { displayfunc( pNB ); };
+   std::function<void( unsigned char, int, int )> keyboardWrapper = [ pNB = &clNBody ]( unsigned char key, int, int ) { keyboardFunc( pNB, key ); };
+
    if( clNBody.display )
    {
        // Run in  graphical window if requested
@@ -767,10 +767,10 @@ int main( int argc, char * argv[] )
       glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE );
       glutCreateWindow( "N-body simulation" );
       GLInit();
-      glutDisplayFunc( displayfunc );
+      glutDisplayFunc( displayWrapper.target<void()>() );
       glutReshapeFunc( reShape );
       glutIdleFunc( idle );
-      glutKeyboardFunc( keyboardFunc );
+      glutKeyboardFunc( keyboardWrapper.target<void( unsigned char, int, int )>() );
       glutMainLoop();
    }
 
