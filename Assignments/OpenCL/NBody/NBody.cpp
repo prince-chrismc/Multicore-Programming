@@ -39,7 +39,7 @@ float NBody::random( float randMax, float randMin )
 
 int NBody::setupNBody()
 {
-   numParticles = max( numParticles, static_cast<cl_uint>( groupSize ) ); // can not have fewer particles then one work group compute elements
+   numParticles = std::max( numParticles, static_cast<cl_uint>( groupSize ) ); // can not have fewer particles then one work group compute elements
    numParticles = static_cast<cl_uint>( ( numParticles / groupSize ) * groupSize ); // make sure numParticles is multiple of group size
 
    initPos = reinterpret_cast<cl_float*>( new cl_float4[ numParticles ] );
@@ -49,7 +49,7 @@ int NBody::setupNBody()
 
    std::random_device rd;
    std::mt19937 gen( rd() );
-   const std::lognormal_distribution<double> numGenPos( 0.0, 3.8645 );
+   std::lognormal_distribution<double> numGenPos( 0.0, 3.8645 );
 
     // initialization of inputs
    for( cl_uint i = 0; i < numParticles; ++i )
