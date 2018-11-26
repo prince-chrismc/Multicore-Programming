@@ -1,7 +1,7 @@
 # OpenCL N-Body Simulation
 Your typical N-Body simulation.
 
-![preview](https://github.com/prince-chrismc/Multicore-Programming/blob/master/Docs/Screencast%202018-11-26%2013:35:15.mp4?raw=true)
+![preview](https://raw.githubusercontent.com/prince-chrismc/Multicore-Programming/master/Docs/Screenshot%20from%202018-11-26%2013-23-13.png)
 
 One exception to this project is that most of the work was done on my laptop which AMD does not expose the integrated GPU as a seperate compute device ( aka there is only one device ). This limitation strongly affect my implementation. I did however do some work on my workstation ( which has 2 CPUs and a GPU ) and modified the implementation slightly to meet the project requirements as much as possible in my limited time frame.
 
