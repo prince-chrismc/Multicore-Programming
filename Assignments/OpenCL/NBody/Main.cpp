@@ -42,6 +42,11 @@ int main( int argc, char** argv )
    int status = clNBody.parseCommandLine( argc, argv );
    CHECK_ERROR( status, SDK_SUCCESS, "Failed to parse CLI agrs" );
 
+   if( clNBody.listDetails )
+   {
+      std::cout << "Printing!" << std::endl;
+   }
+
    status = clNBody.setup();
    CHECK_ERROR( status, SDK_SUCCESS, "Failed to setup NBody" );
 
