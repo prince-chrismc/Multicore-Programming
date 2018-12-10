@@ -42,3 +42,13 @@ kernels. Biult-in extenstions are includes.
    - communicatate status of commands
 
 ###### Programming
+- `clGetPlatformIDs`
+- `clGetDeviceIDs` { CL_DEVICE_TYPE_CPU, CL_DEVICE_TYPE_GPU }
+- `clCreateContext` { array of device IDs }
+- `clCreateCommandQueue`
+- `clGetDeviceInfo` { returns performance details for algorithm decomposition }
+- `clCreateBuffer` | Image 2D or 3D { relative to a context }
+- Enqueue (read/write/copy ops) and Map (Access) buffers
+
+- Kernels compiled dynamic at runtime for various devices
+- Set args and create memory objects
