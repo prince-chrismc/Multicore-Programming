@@ -32,3 +32,13 @@ kernels. Biult-in extenstions are includes.
    - kernels execute within contexts thusly constratied to { device, kernel, program objects, memory object }
    - queue coordinate kernel execution, interlaces with { kernels, memory, synchronization } commandes
    
+###### Runtime
+- Command Queues
+   - operation to perform in a context, guaranteed execution at sync point
+   - signal on completion of a element
+   - blocking an async modes
+   - fences and barriers within a work-group, no schedualing amoung groups
+- Events
+   - communicatate status of commands
+
+###### Programming
